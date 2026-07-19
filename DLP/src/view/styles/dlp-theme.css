@@ -1,0 +1,117 @@
+.login-root {
+    -fx-background-color: linear-gradient(to bottom right, #102a43, #1a365d);
+}
+
+.login-card {
+    -fx-background-color: white;
+    -fx-background-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 18, 0.2, 0, 6);
+    -fx-padding: 36;
+}
+
+.login-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
+
+.login-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #627d98;
+    -fx-wrap-text: true;
+}
+
+.section-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #243b53;
+}
+
+.field-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #486581;
+}
+
+.text-input {
+    -fx-background-radius: 8;
+    -fx-border-color: #bcccdc;
+    -fx-border-radius: 8;
+    -fx-padding: 10 12 10 12;
+}
+
+.primary-button {
+    -fx-background-color: #102a43;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 12 18 12 18;
+}
+
+.primary-button:hover {
+    -fx-background-color: #243b53;
+}
+
+.secondary-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-border-color: white;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 16 8 16;
+}
+
+.role-radio {
+    -fx-font-size: 12px;
+}
+
+.error-label {
+    -fx-text-fill: #d64545;
+    -fx-font-size: 12px;
+    -fx-wrap-text: true;
+}
+
+.dashboard-root {
+    -fx-background-color: #f0f4f8;
+}
+
+.dashboard-header {
+    -fx-background-color: #102a43;
+}
+
+.dashboard-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.dashboard-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #d9e2ec;
+}
+
+.dashboard-content {
+    -fx-background-color: #f0f4f8;
+}
+
+.kpi-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-padding: 18;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 10, 0.1, 0, 2);
+}
+
+.warning-card {
+    -fx-border-color: #f0b429;
+    -fx-border-width: 0 0 0 4;
+}
+
+.kpi-title {
+    -fx-font-size: 13px;
+    -fx-text-fill: #627d98;
+}
+
+.kpi-value {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
