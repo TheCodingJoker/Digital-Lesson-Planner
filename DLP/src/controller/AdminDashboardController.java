@@ -19,17 +19,11 @@ import java.sql.Statement;
 
 public class AdminDashboardController {
 
-    // =========================================================
-    // TOP HEADER
-    // =========================================================
-
+   
     @FXML
     private Label welcomeLabel;
 
-    // =========================================================
-    // DASHBOARD STATISTICS
-    // =========================================================
-
+   
     @FXML
     private Label totalUsersLabel;
 
@@ -42,17 +36,11 @@ public class AdminDashboardController {
     @FXML
     private Label totalLessonPlansLabel;
 
-    // =========================================================
-    // DYNAMIC CONTENT
-    // =========================================================
-
+    
     @FXML
     private VBox contentBox;
 
-    // =========================================================
-    // TABLES
-    // =========================================================
-
+    
     @FXML
     private TableView<?> activityTable;
 
@@ -65,10 +53,7 @@ public class AdminDashboardController {
     @FXML
     private TableColumn<?, ?> dateColumn;
 
-    // =========================================================
-    // INITIALIZE
-    // =========================================================
-
+    
     @FXML
     public void initialize() {
 
@@ -86,10 +71,7 @@ public class AdminDashboardController {
         System.out.println("Admin Dashboard loaded successfully.");
     }
 
-    // =========================================================
-    // ADMINISTRATOR NAME
-    // =========================================================
-
+  
     private void loadAdministratorName() {
 
         try {
@@ -124,10 +106,7 @@ public class AdminDashboardController {
         }
     }
 
-    // =========================================================
-    // DATABASE INITIALIZATION
-    // =========================================================
-
+   
     private void initializeDatabase() {
 
         try {
@@ -137,10 +116,7 @@ public class AdminDashboardController {
 
             try (Statement stmt = conn.createStatement()) {
 
-                // -------------------------------------------------
-                // USERS TABLE
-                // -------------------------------------------------
-
+                
                 stmt.execute(
                         "CREATE TABLE IF NOT EXISTS User (" +
                                 "userId TEXT PRIMARY KEY, " +
@@ -154,10 +130,7 @@ public class AdminDashboardController {
                                 ")"
                 );
 
-                // -------------------------------------------------
-                // SCHOOL EVENTS TABLE
-                // -------------------------------------------------
-
+               
                 stmt.execute(
                         "CREATE TABLE IF NOT EXISTS school_events (" +
                                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -167,10 +140,7 @@ public class AdminDashboardController {
                                 ")"
                 );
 
-                // -------------------------------------------------
-                // CAPS SUBJECTS TABLE
-                // -------------------------------------------------
-
+                
                 stmt.execute(
                         "CREATE TABLE IF NOT EXISTS caps_subjects (" +
                                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -180,10 +150,7 @@ public class AdminDashboardController {
                                 ")"
                 );
 
-                // -------------------------------------------------
-                // AUDIT LOG TABLE
-                // -------------------------------------------------
-
+                
                 stmt.execute(
                         "CREATE TABLE IF NOT EXISTS audit_log (" +
                                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -210,10 +177,7 @@ public class AdminDashboardController {
         }
     }
 
-    // =========================================================
-    // DASHBOARD STATISTICS
-    // =========================================================
-
+    
     private void loadDashboardStatistics() {
 
         try {
@@ -221,39 +185,27 @@ public class AdminDashboardController {
             Connection conn =
                     DatabaseConnection.getConnection();
 
-            // -------------------------------------------------
-            // TOTAL USERS
-            // -------------------------------------------------
-
+           
             int totalUsers = getCount(
                     conn,
                     "SELECT COUNT(*) FROM User"
             );
 
-            // -------------------------------------------------
-            // TOTAL TEACHERS
-            // -------------------------------------------------
-
+            
             int totalTeachers = getCount(
                     conn,
                     "SELECT COUNT(*) FROM User " +
                             "WHERE LOWER(role) = 'teacher'"
             );
 
-            // -------------------------------------------------
-            // TOTAL STUDENTS
-            // -------------------------------------------------
-
+           
             int totalStudents = getCount(
                     conn,
                     "SELECT COUNT(*) FROM User " +
                             "WHERE LOWER(role) = 'student'"
             );
 
-            // -------------------------------------------------
-            // TOTAL LESSON PLANS
-            // -------------------------------------------------
-
+            
             int totalLessonPlans = 0;
 
             try {
@@ -296,10 +248,7 @@ public class AdminDashboardController {
         }
     }
 
-    // =========================================================
-    // DATABASE COUNT
-    // =========================================================
-
+   
     private int getCount(
             Connection conn,
             String sql
@@ -321,10 +270,7 @@ public class AdminDashboardController {
         return 0;
     }
 
-    // =========================================================
-    // DASHBOARD
-    // =========================================================
-
+    
     @FXML
     private void showDashboard(ActionEvent event) {
 
@@ -358,10 +304,7 @@ public class AdminDashboardController {
         loadDashboardStatistics();
     }
 
-    // =========================================================
-    // USER MANAGEMENT
-    // =========================================================
-
+    
     @FXML
     private void showUserManagement(
             ActionEvent event
@@ -471,10 +414,6 @@ public class AdminDashboardController {
             );
         }
     }
-
-    // =========================================================
-    // CAPS DATABASE
-    // =========================================================
 
     @FXML
     private void showCapsDatabase(
@@ -601,10 +540,7 @@ public class AdminDashboardController {
         }
     }
 
-    // =========================================================
-    // SCHOOL CALENDAR
-    // =========================================================
-
+    
     @FXML
     private void showSchoolCalendar(
             ActionEvent event
@@ -792,10 +728,7 @@ public class AdminDashboardController {
         }
     }
 
-    // =========================================================
-    // AUDIT LOG
-    // =========================================================
-
+    
     @FXML
     private void showAuditLog(
             ActionEvent event
@@ -894,10 +827,7 @@ public class AdminDashboardController {
         }
     }
 
-    // =========================================================
-    // ADD USER
-    // =========================================================
-
+   
     @FXML
     private void addUser(ActionEvent event) {
 
@@ -983,10 +913,6 @@ public class AdminDashboardController {
                     }
                 });
     }
-
-    // =========================================================
-    // CREATE USER IN DATABASE
-    // =========================================================
 
     private void createUser(
             String username,
@@ -1082,19 +1008,11 @@ public class AdminDashboardController {
         }
     }
 
-    // =========================================================
-    // ADD TEACHER
-    // =========================================================
-
     @FXML
     private void addTeacher(ActionEvent event) {
 
         addUser(null);
     }
-
-    // =========================================================
-    // ADD SUBJECT
-    // =========================================================
 
     @FXML
     private void addSubject(ActionEvent event) {
@@ -1165,10 +1083,7 @@ public class AdminDashboardController {
                 });
     }
 
-    // =========================================================
-    // SAVE SUBJECT
-    // =========================================================
-
+    
     private void saveSubject(
             String subject,
             String grade,
@@ -1242,10 +1157,7 @@ public class AdminDashboardController {
         }
     }
 
-    // =========================================================
-    // ADD SCHOOL EVENT
-    // =========================================================
-
+    
     @FXML
     private void handleAddEvent(
             ActionEvent event
@@ -1378,10 +1290,7 @@ public class AdminDashboardController {
                 });
     }
 
-    // =========================================================
-    // EDIT SCHOOL EVENT
-    // =========================================================
-
+   
     private void handleEditEvent(
             ActionEvent event,
             int eventId
@@ -1552,10 +1461,7 @@ public class AdminDashboardController {
         }
     }
 
-    // =========================================================
-    // DELETE SCHOOL EVENT
-    // =========================================================
-
+    
     private void handleDeleteEvent(
             ActionEvent event,
             int eventId
@@ -1629,10 +1535,7 @@ public class AdminDashboardController {
                 });
     }
 
-    // =========================================================
-    // AUDIT RECORD
-    // =========================================================
-
+    
     private void recordAudit(
             String action
     ) {
@@ -1690,10 +1593,7 @@ public class AdminDashboardController {
         }
     }
 
-    // =========================================================
-    // LOGOUT
-    // =========================================================
-
+   
     @FXML
     private void handleLogout(
             ActionEvent event
@@ -1733,10 +1633,7 @@ public class AdminDashboardController {
         }
     }
 
-    // =========================================================
-    // MESSAGE BOX
-    // =========================================================
-
+   
     private void showMessage(
             String title,
             String message
