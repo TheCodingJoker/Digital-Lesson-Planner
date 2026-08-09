@@ -18,10 +18,7 @@
             stylesheets="@styles/AdminDashboard.css"
             styleClass="root">
 
-    <!-- ===================================================== -->
-    <!-- TOP HEADER                                            -->
-    <!-- ===================================================== -->
-
+   
     <top>
 
         <HBox styleClass="top-header"
@@ -75,10 +72,7 @@
     </top>
 
 
-    <!-- ===================================================== -->
-    <!-- MAIN CONTENT                                          -->
-    <!-- ===================================================== -->
-
+   
     <center>
 
         <ScrollPane fitToWidth="true"
@@ -89,10 +83,7 @@
             <VBox spacing="30"
                   styleClass="main-content">
 
-                <!-- ================================================= -->
-                <!-- HERO                                                -->
-                <!-- ================================================= -->
-
+              
                 <VBox spacing="8"
                       styleClass="hero-section">
 
@@ -105,10 +96,7 @@
                 </VBox>
 
 
-                <!-- ================================================= -->
-                <!-- STATISTICS                                          -->
-                <!-- ================================================= -->
-
+                
                 <HBox spacing="20"
                       styleClass="statistics-container">
 
@@ -186,18 +174,12 @@
                 </HBox>
 
 
-                <!-- ================================================= -->
-                <!-- ADMINISTRATION PANEL                                -->
-                <!-- ================================================= -->
-
+                
                 <VBox styleClass="admin-panel"
                       spacing="0">
 
 
-                    <!-- ================================================= -->
-                    <!-- TAB NAVIGATION                                     -->
-                    <!-- ================================================= -->
-
+                   
                     <HBox styleClass="tab-bar">
 
                         <!-- USER MANAGEMENT -->
@@ -233,19 +215,8 @@
                     <Separator/>
 
 
-                    <!-- ================================================= -->
-                    <!-- DYNAMIC CONTENT                                    -->
-                    <!-- ================================================= -->
-
-                    <!--
-                        The controller changes the contents of this
-                        VBox when the administrator clicks:
-
-                        User Management
-                        CAPS Database
-                        School Calendar
-                        Audit Log
-                    -->
+                    
+                   
 
                     <VBox fx:id="contentBox"
                           spacing="20"
@@ -257,10 +228,7 @@
                 </VBox>
 
 
-                <!-- ================================================= -->
-                <!-- ACTIVITY TABLE                                      -->
-                <!-- ================================================= -->
-
+              
                 <VBox spacing="12"
                       styleClass="activity-section">
 
