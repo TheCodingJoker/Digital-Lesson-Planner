@@ -115,3 +115,546 @@
     -fx-font-weight: bold;
     -fx-text-fill: #102a43;
 }
+
+.sidebar {
+    -fx-background-color: #1a365d;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-text-fill: #d9e2ec;
+    -fx-font-size: 13px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 12 24 12 24;
+    -fx-border-width: 0 0 0 4;
+    -fx-border-color: transparent;
+}
+
+.nav-button:hover {
+    -fx-background-color: #243b53;
+}
+
+.nav-button-active {
+    -fx-background-color: #243b53;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-border-color: #f0b429;
+}
+
+.content-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-padding: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 10, 0.1, 0, 2);
+}
+
+.dashboard-content .viewport {
+    -fx-background-color: transparent;
+}
+
+.plain-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.plain-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #334e68;
+    -fx-font-size: 13px;
+    -fx-padding: 10 6 10 6;
+    -fx-border-color: transparent transparent #e1e8f0 transparent;
+}
+
+.plain-list .list-cell:filled:selected,
+.plain-list .list-cell:filled:hover {
+    -fx-background-color: #f0f4f8;
+}
+
+/* Data tables (Lesson Plans / Classes) */
+.table-view {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #f0f4f8;
+    -fx-background-radius: 8 8 0 0;
+}
+
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #d9e2ec transparent;
+}
+
+.table-view .column-header .label {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #486581;
+}
+
+.table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #e1e8f0 transparent;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #f8fafc;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #d9e2ec;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #334e68;
+    -fx-font-size: 13px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 8 10 8 10;
+}
+
+.table-action-button {
+    -fx-background-color: #f0f4f8;
+    -fx-text-fill: #102a43;
+    -fx-font-size: 11px;
+    -fx-background-radius: 6;
+    -fx-padding: 5 10 5 10;
+    -fx-cursor: hand;
+}
+
+.table-action-button:hover {
+    -fx-background-color: #d9e2ec;
+}
+
+.table-action-button-danger {
+    -fx-background-color: #fde8e8;
+    -fx-text-fill: #d64545;
+    -fx-font-size: 11px;
+    -fx-background-radius: 6;
+    -fx-padding: 5 10 5 10;
+    -fx-cursor: hand;
+}
+
+.table-action-button-danger:hover {
+    -fx-background-color: #f8caca;
+}
+
+/* Modal form dialogs (Lesson Plan / Class forms) */
+.form-scroll,
+.form-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.form-scroll TextArea .content {
+    -fx-background-color: white;
+}
+
+/* Charts (Reports) */
+.chart {
+    -fx-padding: 4;
+}
+
+.chart-legend {
+    -fx-background-color: transparent;
+}
+
+.default-color0.chart-bar { -fx-bar-fill: #102a43; }
+.default-color0.chart-pie { -fx-pie-color: #bcccdc; }
+.default-color1.chart-pie { -fx-pie-color: #486581; }
+.default-color2.chart-pie { -fx-pie-color: #f0b429; }
+
+/* ===================== App header (redesign) ===================== */
+.app-header {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #e1e8f0 transparent;
+}
+
+.app-header-icon {
+    -fx-background-color: #1a365d;
+    -fx-background-radius: 10;
+    -fx-padding: 8 10 8 10;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+}
+
+.app-header-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
+
+.app-header-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #829ab1;
+}
+
+.app-header-username {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
+
+.app-header-userrole {
+    -fx-font-size: 12px;
+    -fx-text-fill: #829ab1;
+}
+
+.logout-icon-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #486581;
+    -fx-font-size: 15px;
+    -fx-padding: 6 8 6 8;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.logout-icon-button:hover {
+    -fx-background-color: #f0f4f8;
+}
+
+/* ===================== Welcome banner ===================== */
+.welcome-banner {
+    -fx-background-color: #1a365d;
+    -fx-background-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(16, 42, 67, 0.25), 16, 0.15, 0, 4);
+}
+
+.welcome-title {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.welcome-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #bcccdc;
+}
+
+.welcome-cta-button {
+    -fx-background-color: white;
+    -fx-text-fill: #1a365d;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-background-radius: 10;
+    -fx-padding: 12 22 12 22;
+    -fx-cursor: hand;
+}
+
+.welcome-cta-button:hover {
+    -fx-background-color: #e8edf3;
+}
+
+/* ===================== KPI cards (icon style) ===================== */
+.kpi-icon {
+    -fx-background-radius: 50%;
+    -fx-min-width: 44;
+    -fx-min-height: 44;
+    -fx-max-width: 44;
+    -fx-max-height: 44;
+    -fx-alignment: CENTER;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.kpi-icon-green {
+    -fx-background-color: #d1fae5;
+    -fx-text-fill: #16a34a;
+}
+
+.kpi-icon-blue {
+    -fx-background-color: #dbeafe;
+    -fx-text-fill: #2563eb;
+}
+
+.kpi-icon-orange {
+    -fx-background-color: #ffedd5;
+    -fx-text-fill: #ea580c;
+}
+
+.kpi-icon-purple {
+    -fx-background-color: #f3e8ff;
+    -fx-text-fill: #9333ea;
+}
+
+.kpi-goal-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #829ab1;
+}
+
+.kpi-title-link {
+    -fx-text-fill: #486581;
+}
+
+.kpi-progress-track {
+    -fx-background-color: #e1e8f0;
+    -fx-background-radius: 6;
+    -fx-min-height: 6;
+    -fx-max-height: 6;
+    -fx-pref-width: 240;
+}
+
+.kpi-progress-fill {
+    -fx-background-color: #1a365d;
+    -fx-background-radius: 6;
+    -fx-min-height: 6;
+    -fx-max-height: 6;
+}
+
+.kpi-progress-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #829ab1;
+}
+
+.kpi-next-event-box {
+    -fx-border-color: #e1e8f0 transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 8 0 0 0;
+    -fx-spacing: 2;
+}
+
+.kpi-next-event-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
+
+.kpi-next-event-name {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
+
+.kpi-next-event-date {
+    -fx-font-size: 12px;
+    -fx-text-fill: #2563eb;
+}
+
+/* ===================== Lesson list rows (Upcoming/Recent Lessons) ===================== */
+.link-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #2563eb;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+}
+
+.link-button:hover {
+    -fx-underline: true;
+}
+
+.lesson-row {
+    -fx-border-color: transparent transparent #e1e8f0 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.lesson-row-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
+
+.lesson-row-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #627d98;
+}
+
+.lesson-row-date {
+    -fx-font-size: 11px;
+    -fx-text-fill: #829ab1;
+}
+
+.lesson-row-empty {
+    -fx-font-size: 13px;
+    -fx-text-fill: #829ab1;
+    -fx-padding: 16 4 16 4;
+}
+
+.status-badge {
+    -fx-background-radius: 20;
+    -fx-padding: 5 14 5 14;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.badge-scheduled {
+    -fx-background-color: #dbeafe;
+    -fx-text-fill: #2563eb;
+}
+
+.badge-completed {
+    -fx-background-color: #d1fae5;
+    -fx-text-fill: #16a34a;
+}
+
+.badge-extended {
+    -fx-background-color: #ffedd5;
+    -fx-text-fill: #ea580c;
+}
+
+/* ===================== Custom modal chrome (Create Lesson Plan / Class / Calendar) ===================== */
+.modal-root {
+    -fx-background-color: white;
+    -fx-background-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 30, 0.2, 0, 8);
+}
+
+.modal-header {
+    -fx-background-color: #1a365d;
+    -fx-background-radius: 16 16 0 0;
+}
+
+.modal-header-icon {
+    -fx-background-color: rgba(255,255,255,0.15);
+    -fx-background-radius: 10;
+    -fx-padding: 8 10 8 10;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+}
+
+.modal-header-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.modal-header-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #bcccdc;
+}
+
+.modal-close-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 6 10 6 10;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.modal-close-button:hover {
+    -fx-background-color: rgba(255,255,255,0.15);
+}
+
+.modal-body-scroll {
+    -fx-background-color: white;
+    -fx-background: white;
+    -fx-background-radius: 0 0 16 16;
+}
+
+.modal-body-scroll .viewport {
+    -fx-background-color: white;
+}
+
+.form-section-header {
+    -fx-padding: 4 0 0 0;
+}
+
+.form-section-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
+
+.modal-footer {
+    -fx-background-color: white;
+    -fx-background-radius: 0 0 16 16;
+    -fx-border-color: #e1e8f0 transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.modal-primary-button {
+    -fx-background-color: #1a365d;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-radius: 10;
+    -fx-padding: 14 24 14 24;
+    -fx-cursor: hand;
+}
+
+.modal-primary-button:hover {
+    -fx-background-color: #14294a;
+}
+
+.modal-cancel-button {
+    -fx-background-color: white;
+    -fx-text-fill: #1a365d;
+    -fx-border-color: #bcccdc;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-font-size: 14px;
+    -fx-padding: 14 24 14 24;
+    -fx-cursor: hand;
+}
+
+.modal-cancel-button:hover {
+    -fx-background-color: #f0f4f8;
+}
+
+/* ===================== Lesson Calendar ===================== */
+.calendar-nav-button {
+    -fx-background-color: #f0f4f8;
+    -fx-text-fill: #102a43;
+    -fx-background-radius: 8;
+    -fx-padding: 8 14 8 14;
+    -fx-cursor: hand;
+}
+
+.calendar-nav-button:hover {
+    -fx-background-color: #d9e2ec;
+}
+
+.calendar-month-label {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
+
+.calendar-day-header {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #627d98;
+    -fx-padding: 0 0 6 0;
+}
+
+.calendar-day-cell {
+    -fx-background-color: white;
+    -fx-border-color: #e1e8f0;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8;
+}
+
+.calendar-day-cell-today {
+    -fx-border-color: #1a365d;
+    -fx-border-width: 2;
+}
+
+.calendar-day-number {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
+
+.calendar-event-pill {
+    -fx-background-radius: 6;
+    -fx-padding: 3 6 3 6;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.calendar-event-scheduled {
+    -fx-background-color: #1a365d;
+    -fx-text-fill: white;
+}
+
+.calendar-event-completed {
+    -fx-background-color: #16a34a;
+    -fx-text-fill: white;
+}
+
+.calendar-event-extended {
+    -fx-background-color: #ea580c;
+    -fx-text-fill: white;
+}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="controller.ClassFormController"
+      spacing="14" prefWidth="440">
+    <padding>
+        <Insets top="6" right="6" bottom="6" left="6"/>
+    </padding>
+
+    <Label fx:id="errorLabel" styleClass="error-label"/>
+
+    <VBox spacing="6">
+        <Label text="Class Name" styleClass="field-label"/>
+        <TextField fx:id="classNameField" promptText="e.g. Grade 7A" styleClass="text-input"/>
+    </VBox>
+
+    <VBox spacing="6">
+        <Label text="Subject" styleClass="field-label"/>
+        <ComboBox fx:id="subjectCombo" editable="true" maxWidth="Infinity" styleClass="text-input"/>
+    </VBox>
+
+    <VBox spacing="6">
+        <Label text="Grade" styleClass="field-label"/>
+        <ComboBox fx:id="gradeCombo" maxWidth="Infinity" styleClass="text-input"/>
+    </VBox>
+
+    <VBox spacing="6">
+        <Label text="Number of Students" styleClass="field-label"/>
+        <TextField fx:id="studentCountField" promptText="e.g. 32" styleClass="text-input"/>
+    </VBox>
+
+    <VBox spacing="6">
+        <Label text="Notes" styleClass="field-label"/>
+        <TextArea fx:id="notesArea" promptText="Optional notes about this class"
+                  wrapText="true" prefRowCount="3" styleClass="text-input"/>
+    </VBox>
+</VBox>
