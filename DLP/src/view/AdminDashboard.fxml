@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="controller.AdminDashboardController"
+            stylesheets="@styles/AdminDashboard.css"
+            styleClass="root">
+
+    <top>
+
+        <HBox styleClass="top-header"
+              alignment="CENTER_LEFT">
+
+            <padding>
+                <Insets top="12"
+                        right="28"
+                        bottom="12"
+                        left="40"/>
+            </padding>
+
+            <!-- Logo -->
+            <Label text="▣"
+                   styleClass="logo-icon"/>
+
+            <!-- Application title -->
+            <VBox spacing="2">
+
+                <Label text="Digital Lesson Planner"
+                       styleClass="application-title"/>
+
+                <Label text="Administrator Portal"
+                       styleClass="portal-title"/>
+
+            </VBox>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Administrator information -->
+            <VBox alignment="CENTER_RIGHT"
+                  spacing="2">
+
+                <!-- This is updated by the controller -->
+                <Label fx:id="welcomeLabel"
+                       text="Welcome, Administrator"
+                       styleClass="admin-name"/>
+
+                <Label text="Administrator"
+                       styleClass="admin-role"/>
+
+            </VBox>
+
+            <!-- Logout -->
+            <Button text="⇥"
+                    onAction="#handleLogout"
+                    styleClass="logout-icon-button"/>
+
+        </HBox>
+
+    </top>
+
+
+   
+    <center>
+
+        <ScrollPane fitToWidth="true"
+                    fitToHeight="true"
+                    hbarPolicy="NEVER"
+                    styleClass="main-scroll">
+
+            <VBox spacing="30"
+                  styleClass="main-content">
+
+                <!-- ================================================= -->
+                <!-- HERO                                                -->
+                <!-- ================================================= -->
+
+                <VBox spacing="8"
+                      styleClass="hero-section">
+
+                    <Label text="System Administration"
+                           styleClass="hero-title"/>
+
+                    <Label text="Manage users, curriculum data, and system settings"
+                           styleClass="hero-subtitle"/>
+
+                </VBox>
+
+
+               
+                <HBox spacing="20"
+                      styleClass="statistics-container">
+
+                    <!-- TOTAL USERS -->
+
+                    <VBox spacing="8"
+                          styleClass="stat-card">
+
+                        <Label text="Total Users"
+                               styleClass="stat-title"/>
+
+                        <Label fx:id="totalUsersLabel"
+                               text="0"
+                               styleClass="stat-number"/>
+
+                        <Label text="Registered system users"
+                               styleClass="stat-description"/>
+
+                    </VBox>
+
+
+                    <!-- TOTAL TEACHERS -->
+
+                    <VBox spacing="8"
+                          styleClass="stat-card">
+
+                        <Label text="Teachers"
+                               styleClass="stat-title"/>
+
+                        <Label fx:id="totalTeachersLabel"
+                               text="0"
+                               styleClass="stat-number"/>
+
+                        <Label text="Registered teachers"
+                               styleClass="stat-description"/>
+
+                    </VBox>
+
+
+                    
+
+                    <VBox spacing="8"
+                          styleClass="stat-card">
+
+                        <Label text="Students"
+                               styleClass="stat-title"/>
+
+                        <Label fx:id="totalStudentsLabel"
+                               text="0"
+                               styleClass="stat-number"/>
+
+                        <Label text="Registered students"
+                               styleClass="stat-description"/>
+
+                    </VBox>
+
+
+                    
+
+                    <VBox spacing="8"
+                          styleClass="stat-card">
+
+                        <Label text="Lesson Plans"
+                               styleClass="stat-title"/>
+
+                        <Label fx:id="totalLessonPlansLabel"
+                               text="0"
+                               styleClass="stat-number"/>
+
+                        <Label text="Lesson plans created"
+                               styleClass="stat-description"/>
+
+                    </VBox>
+
+                </HBox>
+
+
+                
+                <VBox styleClass="admin-panel"
+                      spacing="0">
+
+
+                    
+                    <HBox styleClass="tab-bar">
+
+                        
+
+                        <Button text="♙  User Management"
+                                onAction="#showUserManagement"
+                                styleClass="tab-button"/>
+
+
+                        
+
+                        <Button text="▤  CAPS Database"
+                                onAction="#showCapsDatabase"
+                                styleClass="tab-button"/>
+
+
+                        
+
+                        <Button text="▣  School Calendar"
+                                onAction="#showSchoolCalendar"
+                                styleClass="tab-button-active"/>
+
+
+                        
+
+                        <Button text="♢  Audit Log"
+                                onAction="#showAuditLog"
+                                styleClass="tab-button"/>
+
+                    </HBox>
+
+
+                    <Separator/>
+
+
+                    
+
+                    <VBox fx:id="contentBox"
+                          spacing="20"
+                          styleClass="calendar-content">
+
+                    </VBox>
+
+
+                </VBox>
+
+
+               
+                <VBox spacing="12"
+                      styleClass="activity-section">
+
+                    <Label text="Recent Activity"
+                           styleClass="section-title"/>
+
+                    <TableView fx:id="activityTable"
+                               prefHeight="180"
+                               styleClass="table-view">
+
+                        <columns>
+
+                            <TableColumn fx:id="activityColumn"
+                                         text="Activity"
+                                         prefWidth="300"/>
+
+                            <TableColumn fx:id="userColumn"
+                                         text="User"
+                                         prefWidth="200"/>
+
+                            <TableColumn fx:id="dateColumn"
+                                         text="Date"
+                                         prefWidth="200"/>
+
+                        </columns>
+
+                    </TableView>
+
+                </VBox>
+
+
+            </VBox>
+
+        </ScrollPane>
+
+    </center>
+
+</BorderPane>

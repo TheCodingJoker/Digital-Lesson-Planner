@@ -83,7 +83,7 @@
         <echo message="Running application as regular Java application"/>
         <java classname="MainApp" fork="true">
             <jvmarg value="--module-path"/>
-            <jvmarg value="C:\\Users\\Downloads\\zulu23.32.11-ca-fx-jdk23.0.2-win_x64\\zulu23.32.11-ca-fx-jdk23.0.2-win_x64\\jmods"/>
+            <jvmarg value="C:\\Users\\Admin\\Downloads\\zulu26.30.11-ca-fx-jdk26.0.1-win_x64\\zulu26.30.11-ca-fx-jdk26.0.1-win_x64\\jmods"/>
             <jvmarg value="--add-modules"/>
             <jvmarg value="javafx.controls,javafx.fxml,javafx.graphics"/>
             <classpath>
@@ -131,8 +131,8 @@
     <!-- Override to manually copy required libraries -->
     <target name="-post-jar">
         <echo message="Copying required libraries to dist/lib"/>
-        <copy file="${basedir}\lib\sqlite-jdbc-3.53.2.0.jar" todir="${dist.dir}\lib" failonerror="false"/>
-        <copy file="${basedir}\lib\jbcrypt-0.4.jar" todir="${dist.dir}\lib" failonerror="false"/>
+        <copy file="C:\\Users\\Admin\\Downloads\\sqlite-jdbc-3.53.2.0.jar" todir="${dist.dir}\\lib" failonerror="false"/>
+        <copy file="..\\..\\..\\..\\Downloads\\jbcrypt-0.4.jar" todir="${dist.dir}\\lib" failonerror="false"/>
     </target>
     
     <!-- Override JavaFX-specific run targets -->
