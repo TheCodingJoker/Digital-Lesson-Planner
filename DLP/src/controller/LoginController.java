@@ -108,49 +108,35 @@ public class LoginController {
         return null;
     }
 
-     private void navigateToDashboard(String role) {
-
-    try {
-
-        String dashboardPath;
-
+    private void navigateToDashboard(String role) {
+        String fxmlPath;
         switch (role) {
-
-            case "ADMINISTRATOR":
-                dashboardPath = "/view/AdminDashboard.fxml";
-                break;
-
             case "TEACHER":
-                errorLabel.setText("Teacher dashboard is not available yet.");
-                return;
-
-            case "PRINCIPAL_HOD":
-                errorLabel.setText("Principal dashboard is not available yet.");
-                return;
-
+                fxmlPath = "/view/TeacherDashboardView.fxml";
+                break;
             default:
-                errorLabel.setText("Unknown user role.");
+                // Principal/Admin dashboards aren't built yet
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Login Successful");
+                alert.setHeaderText("Welcome, " +
+                    SessionManager.getInstance().getCurrentUser().getUsername());
+                alert.setContentText("Logged in as: " + role +
+                    "\n\nDashboard implementation coming soon.");
+                alert.showAndWait();
                 return;
         }
 
-        javafx.fxml.FXMLLoader loader =
-                new javafx.fxml.FXMLLoader(
-                        getClass().getResource(dashboardPath)
-                );
-
-        javafx.scene.Parent dashboard = loader.load();
-
-        loginButton.getScene().setRoot(dashboard);
-
-    } catch (Exception e) {
-
-        e.printStackTrace();
-
-        errorLabel.setText(
-                "Unable to open dashboard: " + e.getMessage()
-        );
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource(fxmlPath));
+            javafx.scene.Parent dashboardView = loader.load();
+            loginButton.getScene().setRoot(dashboardView);
+        } catch (Exception e) {
+            e.printStackTrace();
+            errorLabel.setText("Failed to load the dashboard. Please try again.");
+        }
     }
-}
+
     private void setupActivityMonitoring() {
         // Monitor mouse and keyboard activity
         usernameField.addEventFilter(KeyEvent.KEY_TYPED,

@@ -54,10 +54,53 @@ public class MainApp extends Application {
                     "email TEXT UNIQUE NOT NULL, " +
                     "isActive INTEGER DEFAULT 1, " +
                     "createdAt TEXT DEFAULT (datetime('now','localtime')))");
+
+                stmt.execute("CREATE TABLE IF NOT EXISTS LessonPlan (" +
+                    "lessonPlanId TEXT PRIMARY KEY, " +
+                    "teacherId TEXT NOT NULL, " +
+                    "title TEXT NOT NULL, " +
+                    "subject TEXT NOT NULL, " +
+                    "gradeLevel TEXT NOT NULL, " +
+                    "curriculumReference TEXT, " +
+                    "topic TEXT, " +
+                    "durationMinutes INTEGER DEFAULT 60, " +
+                    "objectives TEXT, " +
+                    "teachingActivities TEXT, " +
+                    "resources TEXT, " +
+                    "assessmentMethod TEXT, " +
+                    "lessonDate TEXT, " +
+                    "status TEXT NOT NULL DEFAULT 'SCHEDULED', " +
+                    "createdAt TEXT DEFAULT (datetime('now','localtime')), " +
+                    "updatedAt TEXT DEFAULT (datetime('now','localtime')), " +
+                    "FOREIGN KEY (teacherId) REFERENCES User(userId))");
+
+                // Defensive migration for teachers already running an earlier build of this app
+                addColumnIfMissing(stmt, "LessonPlan", "durationMinutes", "INTEGER DEFAULT 60");
+                addColumnIfMissing(stmt, "LessonPlan", "teachingActivities", "TEXT");
+
+                stmt.execute("CREATE TABLE IF NOT EXISTS SchoolClass (" +
+                    "classId TEXT PRIMARY KEY, " +
+                    "teacherId TEXT NOT NULL, " +
+                    "className TEXT NOT NULL, " +
+                    "subject TEXT NOT NULL, " +
+                    "gradeLevel TEXT NOT NULL, " +
+                    "studentCount INTEGER DEFAULT 0, " +
+                    "notes TEXT, " +
+                    "createdAt TEXT DEFAULT (datetime('now','localtime')), " +
+                    "FOREIGN KEY (teacherId) REFERENCES User(userId))");
             }
             System.out.println("Database initialized successfully.");
         } catch (Exception e) {
             System.err.println("Database initialization failed: " + e.getMessage());
+        }
+    }
+
+    /** Adds a column to an existing table if it doesn't already exist (safe re-run on every startup). */
+    private void addColumnIfMissing(Statement stmt, String table, String column, String columnDef) {
+        try {
+            stmt.execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + columnDef);
+        } catch (Exception e) {
+            // Column already exists - nothing to do.
         }
     }
 
