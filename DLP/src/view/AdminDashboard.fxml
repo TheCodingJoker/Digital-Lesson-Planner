@@ -18,10 +18,6 @@
             stylesheets="@styles/AdminDashboard.css"
             styleClass="root">
 
-    <!-- ===================================================== -->
-    <!-- TOP HEADER                                            -->
-    <!-- ===================================================== -->
-
     <top>
 
         <HBox styleClass="top-header"
@@ -75,10 +71,7 @@
     </top>
 
 
-    <!-- ===================================================== -->
-    <!-- MAIN CONTENT                                          -->
-    <!-- ===================================================== -->
-
+   
     <center>
 
         <ScrollPane fitToWidth="true"
@@ -105,10 +98,7 @@
                 </VBox>
 
 
-                <!-- ================================================= -->
-                <!-- STATISTICS                                          -->
-                <!-- ================================================= -->
-
+               
                 <HBox spacing="20"
                       styleClass="statistics-container">
 
@@ -148,7 +138,7 @@
                     </VBox>
 
 
-                    <!-- TOTAL STUDENTS -->
+                    
 
                     <VBox spacing="8"
                           styleClass="stat-card">
@@ -166,7 +156,7 @@
                     </VBox>
 
 
-                    <!-- TOTAL LESSON PLANS -->
+                    
 
                     <VBox spacing="8"
                           styleClass="stat-card">
@@ -186,42 +176,36 @@
                 </HBox>
 
 
-                <!-- ================================================= -->
-                <!-- ADMINISTRATION PANEL                                -->
-                <!-- ================================================= -->
-
+                
                 <VBox styleClass="admin-panel"
                       spacing="0">
 
 
-                    <!-- ================================================= -->
-                    <!-- TAB NAVIGATION                                     -->
-                    <!-- ================================================= -->
-
+                    
                     <HBox styleClass="tab-bar">
 
-                        <!-- USER MANAGEMENT -->
+                        
 
                         <Button text="♙  User Management"
                                 onAction="#showUserManagement"
                                 styleClass="tab-button"/>
 
 
-                        <!-- CAPS DATABASE -->
+                        
 
                         <Button text="▤  CAPS Database"
                                 onAction="#showCapsDatabase"
                                 styleClass="tab-button"/>
 
 
-                        <!-- SCHOOL CALENDAR -->
+                        
 
                         <Button text="▣  School Calendar"
                                 onAction="#showSchoolCalendar"
                                 styleClass="tab-button-active"/>
 
 
-                        <!-- AUDIT LOG -->
+                        
 
                         <Button text="♢  Audit Log"
                                 onAction="#showAuditLog"
@@ -233,19 +217,7 @@
                     <Separator/>
 
 
-                    <!-- ================================================= -->
-                    <!-- DYNAMIC CONTENT                                    -->
-                    <!-- ================================================= -->
-
-                    <!--
-                        The controller changes the contents of this
-                        VBox when the administrator clicks:
-
-                        User Management
-                        CAPS Database
-                        School Calendar
-                        Audit Log
-                    -->
+                    
 
                     <VBox fx:id="contentBox"
                           spacing="20"
@@ -257,10 +229,7 @@
                 </VBox>
 
 
-                <!-- ================================================= -->
-                <!-- ACTIVITY TABLE                                      -->
-                <!-- ================================================= -->
-
+               
                 <VBox spacing="12"
                       styleClass="activity-section">
 

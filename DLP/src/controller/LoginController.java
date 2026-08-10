@@ -108,19 +108,49 @@ public class LoginController {
         return null;
     }
 
-    private void navigateToDashboard(String role) {
-        // For now, show alert since other dashboards aren't built yet
-        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Login Successful");
-            alert.setHeaderText("Welcome, " + 
-                SessionManager.getInstance().getCurrentUser().getUsername());
-            alert.setContentText("Logged in as: " + role + 
-                "\n\nDashboard implementation coming soon.");
-            alert.showAndWait();
-        });
-    }
+     private void navigateToDashboard(String role) {
 
+    try {
+
+        String dashboardPath;
+
+        switch (role) {
+
+            case "ADMINISTRATOR":
+                dashboardPath = "/view/AdminDashboard.fxml";
+                break;
+
+            case "TEACHER":
+                errorLabel.setText("Teacher dashboard is not available yet.");
+                return;
+
+            case "PRINCIPAL_HOD":
+                errorLabel.setText("Principal dashboard is not available yet.");
+                return;
+
+            default:
+                errorLabel.setText("Unknown user role.");
+                return;
+        }
+
+        javafx.fxml.FXMLLoader loader =
+                new javafx.fxml.FXMLLoader(
+                        getClass().getResource(dashboardPath)
+                );
+
+        javafx.scene.Parent dashboard = loader.load();
+
+        loginButton.getScene().setRoot(dashboard);
+
+    } catch (Exception e) {
+
+        e.printStackTrace();
+
+        errorLabel.setText(
+                "Unable to open dashboard: " + e.getMessage()
+        );
+    }
+}
     private void setupActivityMonitoring() {
         // Monitor mouse and keyboard activity
         usernameField.addEventFilter(KeyEvent.KEY_TYPED,
