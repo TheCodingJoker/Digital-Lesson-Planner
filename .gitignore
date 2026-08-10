@@ -75,8 +75,7 @@ develop-eggs/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# lib/ and lib64/ rules removed - DLP/lib/ holds required project JARs
 parts/
 sdist/
 var/

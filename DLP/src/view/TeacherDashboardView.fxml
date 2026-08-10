@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="controller.TeacherDashboardController"
+            styleClass="dashboard-root"
+            stylesheets="@styles/dlp-theme.css">
+
+    <top>
+        <HBox styleClass="app-header" alignment="CENTER_LEFT" spacing="14">
+            <padding>
+                <Insets top="14" right="28" bottom="14" left="28"/>
+            </padding>
+
+            <Label text="&#128214;" styleClass="app-header-icon"/>
+            <VBox spacing="1">
+                <Label text="Digital Lesson Planner" styleClass="app-header-title"/>
+                <Label text="Teacher Portal" styleClass="app-header-subtitle"/>
+            </VBox>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <VBox spacing="0" alignment="CENTER_RIGHT">
+                <Label fx:id="userNameLabel" styleClass="app-header-username"/>
+                <Label text="Teacher" styleClass="app-header-userrole"/>
+            </VBox>
+            <Button fx:id="logoutButton" text="&#10132;" onAction="#handleLogout" styleClass="logout-icon-button"/>
+        </HBox>
+    </top>
+
+    <left>
+        <VBox styleClass="sidebar" prefWidth="220" spacing="4">
+            <padding>
+                <Insets top="24" right="0" bottom="24" left="0"/>
+            </padding>
+            <Button fx:id="navDashboardButton" text="Dashboard" onAction="#handleNavDashboard"
+                    styleClass="nav-button" maxWidth="Infinity"/>
+            <Button fx:id="navLessonPlansButton" text="My Lesson Plans" onAction="#handleNavLessonPlans"
+                    styleClass="nav-button" maxWidth="Infinity"/>
+            <Button fx:id="navClassesButton" text="My Classes" onAction="#handleNavClasses"
+                    styleClass="nav-button" maxWidth="Infinity"/>
+            <Button fx:id="navReportsButton" text="Reports" onAction="#handleNavReports"
+                    styleClass="nav-button" maxWidth="Infinity"/>
+        </VBox>
+    </left>
+
+    <center>
+        <StackPane fx:id="contentArea" styleClass="dashboard-content"/>
+    </center>
+
+</BorderPane>

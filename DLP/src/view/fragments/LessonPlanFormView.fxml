@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="controller.LessonPlanFormController"
+      spacing="18" prefWidth="620">
+
+    <Label fx:id="errorLabel" styleClass="error-label"/>
+
+    <HBox spacing="8" alignment="CENTER_LEFT" styleClass="form-section-header">
+        <Label text="&#128196;"/>
+        <Label text="Basic Information" styleClass="form-section-title"/>
+    </HBox>
+
+    <GridPane hgap="16" vgap="14">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="50"/>
+            <ColumnConstraints percentWidth="50"/>
+        </columnConstraints>
+
+        <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="0">
+            <Label text="Grade" styleClass="field-label"/>
+            <ComboBox fx:id="gradeCombo" promptText="Select grade" maxWidth="Infinity" styleClass="text-input"/>
+        </VBox>
+        <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="0">
+            <Label text="Subject" styleClass="field-label"/>
+            <ComboBox fx:id="subjectCombo" editable="true" promptText="Select subject" maxWidth="Infinity" styleClass="text-input"/>
+        </VBox>
+
+        <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="1">
+            <Label text="Term" styleClass="field-label"/>
+            <ComboBox fx:id="termCombo" promptText="Select term" maxWidth="Infinity" styleClass="text-input"/>
+        </VBox>
+        <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <Label text="Duration (minutes)" styleClass="field-label"/>
+            <TextField fx:id="durationField" text="60" styleClass="text-input"/>
+        </VBox>
+
+        <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="2">
+            <Label text="Lesson Date" styleClass="field-label"/>
+            <DatePicker fx:id="lessonDatePicker" maxWidth="Infinity" styleClass="text-input"/>
+        </VBox>
+        <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="2">
+            <Label text="Topic" styleClass="field-label"/>
+            <TextField fx:id="topicField" promptText="e.g., Linear Equations" styleClass="text-input"/>
+        </VBox>
+    </GridPane>
+
+    <VBox spacing="6">
+        <Label text="Learning Objectives" styleClass="field-label"/>
+        <TextArea fx:id="objectivesArea" promptText="What should learners be able to do by the end of the lesson?"
+                  wrapText="true" prefRowCount="3" styleClass="text-input"/>
+    </VBox>
+
+    <VBox spacing="6">
+        <Label text="Teaching Activities" styleClass="field-label"/>
+        <TextArea fx:id="teachingActivitiesArea" promptText="Describe the teaching activities and methods..."
+                  wrapText="true" prefRowCount="3" styleClass="text-input"/>
+    </VBox>
+
+    <VBox spacing="6">
+        <Label text="Assessment Methods" styleClass="field-label"/>
+        <TextArea fx:id="assessmentArea" promptText="How will you assess learning?"
+                  wrapText="true" prefRowCount="3" styleClass="text-input"/>
+    </VBox>
+
+    <VBox spacing="6">
+        <Label text="Resources Required" styleClass="field-label"/>
+        <TextField fx:id="resourcesField" promptText="e.g., Textbooks, calculators, whiteboard" styleClass="text-input"/>
+    </VBox>
+
+</VBox>

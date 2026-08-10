@@ -109,16 +109,32 @@ public class LoginController {
     }
 
     private void navigateToDashboard(String role) {
-        // For now, show alert since other dashboards aren't built yet
-        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Login Successful");
-            alert.setHeaderText("Welcome, " + 
-                SessionManager.getInstance().getCurrentUser().getUsername());
-            alert.setContentText("Logged in as: " + role + 
-                "\n\nDashboard implementation coming soon.");
-            alert.showAndWait();
-        });
+        String fxmlPath;
+        switch (role) {
+            case "TEACHER":
+                fxmlPath = "/view/TeacherDashboardView.fxml";
+                break;
+            default:
+                // Principal/Admin dashboards aren't built yet
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Login Successful");
+                alert.setHeaderText("Welcome, " +
+                    SessionManager.getInstance().getCurrentUser().getUsername());
+                alert.setContentText("Logged in as: " + role +
+                    "\n\nDashboard implementation coming soon.");
+                alert.showAndWait();
+                return;
+        }
+
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource(fxmlPath));
+            javafx.scene.Parent dashboardView = loader.load();
+            loginButton.getScene().setRoot(dashboardView);
+        } catch (Exception e) {
+            e.printStackTrace();
+            errorLabel.setText("Failed to load the dashboard. Please try again.");
+        }
     }
 
     private void setupActivityMonitoring() {

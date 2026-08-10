@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="controller.ReportsController"
+            fitToWidth="true" styleClass="dashboard-content">
+    <VBox spacing="24">
+        <padding>
+            <Insets top="28" right="28" bottom="28" left="28"/>
+        </padding>
+
+        <Label text="Reports" styleClass="section-label"/>
+
+        <!-- Summary KPI Cards -->
+        <GridPane hgap="18" vgap="18">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="25"/>
+                <ColumnConstraints percentWidth="25"/>
+                <ColumnConstraints percentWidth="25"/>
+                <ColumnConstraints percentWidth="25"/>
+            </columnConstraints>
+
+            <VBox styleClass="kpi-card" spacing="8" GridPane.columnIndex="0">
+                <Label text="Total Lesson Plans" styleClass="kpi-title"/>
+                <Label fx:id="totalValue" styleClass="kpi-value"/>
+            </VBox>
+            <VBox styleClass="kpi-card" spacing="8" GridPane.columnIndex="1">
+                <Label text="Completed" styleClass="kpi-title"/>
+                <Label fx:id="completedValue" styleClass="kpi-value"/>
+            </VBox>
+            <VBox styleClass="kpi-card" spacing="8" GridPane.columnIndex="2">
+                <Label text="Completion Rate" styleClass="kpi-title"/>
+                <Label fx:id="completionRateValue" styleClass="kpi-value"/>
+            </VBox>
+            <VBox styleClass="kpi-card, warning-card" spacing="8" GridPane.columnIndex="3">
+                <Label text="Behind Schedule" styleClass="kpi-title"/>
+                <Label fx:id="behindScheduleValue" styleClass="kpi-value"/>
+            </VBox>
+        </GridPane>
+
+        <!-- Charts -->
+        <HBox spacing="24">
+            <VBox styleClass="content-card" spacing="12" HBox.hgrow="ALWAYS">
+                <Label text="Lesson Plans by Status" styleClass="section-label"/>
+                <PieChart fx:id="statusPieChart" legendVisible="true" prefHeight="280"/>
+            </VBox>
+
+            <VBox styleClass="content-card" spacing="12" HBox.hgrow="ALWAYS">
+                <Label text="Lesson Plans by Subject" styleClass="section-label"/>
+                <BarChart fx:id="subjectBarChart" legendVisible="false" prefHeight="280">
+                    <xAxis>
+                        <CategoryAxis/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis/>
+                    </yAxis>
+                </BarChart>
+            </VBox>
+        </HBox>
+    </VBox>
+</ScrollPane>
