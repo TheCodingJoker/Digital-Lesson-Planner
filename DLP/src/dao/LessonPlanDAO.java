@@ -117,6 +117,23 @@ public class LessonPlanDAO {
         return plans;
     }
 
+    public List<LessonPlan> getAllLessonPlans() {
+        List<LessonPlan> plans = new ArrayList<>();
+        String sql = "SELECT * FROM LessonPlan ORDER BY lessonDate DESC, createdAt DESC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                plans.add(extractLessonPlan(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting all lesson plans: " + e.getMessage());
+        }
+        return plans;
+    }
+
     /** Lesson plans for a teacher whose lessonDate falls within [monthStart, monthEnd] inclusive (ISO yyyy-MM-dd). */
     public List<LessonPlan> findByTeacherAndDateRange(String teacherId, String startIso, String endIso) {
         List<LessonPlan> plans = new ArrayList<>();
