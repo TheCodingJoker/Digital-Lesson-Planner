@@ -15,9 +15,9 @@
             stylesheets="@styles/dlp-theme.css">
 
     <top>
-        <HBox styleClass="app-header" alignment="CENTER_LEFT" spacing="14">
+        <HBox styleClass="app-header" alignment="CENTER_LEFT" spacing="12">
             <padding>
-                <Insets top="14" right="28" bottom="14" left="28"/>
+                <Insets top="12" right="24" bottom="12" left="24"/>
             </padding>
 
             <Label text="&#128214;" styleClass="app-header-icon"/>

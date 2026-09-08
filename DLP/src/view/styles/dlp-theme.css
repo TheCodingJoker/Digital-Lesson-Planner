@@ -22,7 +22,7 @@
 }
 
 .section-label {
-    -fx-font-size: 14px;
+    -fx-font-size: 13px;
     -fx-font-weight: bold;
     -fx-text-fill: #243b53;
 }
@@ -95,9 +95,9 @@
 
 .kpi-card {
     -fx-background-color: white;
-    -fx-background-radius: 12;
-    -fx-padding: 18;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 10, 0.1, 0, 2);
+    -fx-background-radius: 10;
+    -fx-padding: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.06), 8, 0.08, 0, 2);
 }
 
 .warning-card {
@@ -106,12 +106,12 @@
 }
 
 .kpi-title {
-    -fx-font-size: 13px;
+    -fx-font-size: 12px;
     -fx-text-fill: #627d98;
 }
 
 .kpi-value {
-    -fx-font-size: 28px;
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
     -fx-text-fill: #102a43;
 }
@@ -144,9 +144,9 @@
 
 .content-card {
     -fx-background-color: white;
-    -fx-background-radius: 12;
-    -fx-padding: 20;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 10, 0.1, 0, 2);
+    -fx-background-radius: 10;
+    -fx-padding: 14;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.06), 8, 0.08, 0, 2);
 }
 
 .dashboard-content .viewport {
@@ -272,14 +272,14 @@
 
 .app-header-icon {
     -fx-background-color: #1a365d;
-    -fx-background-radius: 10;
-    -fx-padding: 8 10 8 10;
+    -fx-background-radius: 8;
+    -fx-padding: 6 9 6 9;
     -fx-text-fill: white;
-    -fx-font-size: 16px;
+    -fx-font-size: 15px;
 }
 
 .app-header-title {
-    -fx-font-size: 18px;
+    -fx-font-size: 17px;
     -fx-font-weight: bold;
     -fx-text-fill: #102a43;
 }
@@ -304,8 +304,8 @@
     -fx-background-color: transparent;
     -fx-text-fill: #486581;
     -fx-font-size: 15px;
-    -fx-padding: 6 8 6 8;
-    -fx-background-radius: 8;
+    -fx-padding: 5 7 5 7;
+    -fx-background-radius: 6;
     -fx-cursor: hand;
 }
 
@@ -316,18 +316,18 @@
 /* ===================== Welcome banner ===================== */
 .welcome-banner {
     -fx-background-color: #1a365d;
-    -fx-background-radius: 16;
-    -fx-effect: dropshadow(gaussian, rgba(16, 42, 67, 0.25), 16, 0.15, 0, 4);
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(16, 42, 67, 0.15), 12, 0.1, 0, 3);
 }
 
 .welcome-title {
-    -fx-font-size: 26px;
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
     -fx-text-fill: white;
 }
 
 .welcome-subtitle {
-    -fx-font-size: 14px;
+    -fx-font-size: 13px;
     -fx-text-fill: #bcccdc;
 }
 
@@ -336,8 +336,8 @@
     -fx-text-fill: #1a365d;
     -fx-font-weight: bold;
     -fx-font-size: 13px;
-    -fx-background-radius: 10;
-    -fx-padding: 12 22 12 22;
+    -fx-background-radius: 8;
+    -fx-padding: 10 20 10 20;
     -fx-cursor: hand;
 }
 
@@ -348,12 +348,12 @@
 /* ===================== KPI cards (icon style) ===================== */
 .kpi-icon {
     -fx-background-radius: 50%;
-    -fx-min-width: 44;
-    -fx-min-height: 44;
-    -fx-max-width: 44;
-    -fx-max-height: 44;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-max-width: 40;
+    -fx-max-height: 40;
     -fx-alignment: CENTER;
-    -fx-font-size: 18px;
+    -fx-font-size: 16px;
     -fx-font-weight: bold;
 }
 
@@ -378,7 +378,7 @@
 }
 
 .kpi-goal-label {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-text-fill: #829ab1;
 }
 
@@ -388,45 +388,46 @@
 
 .kpi-progress-track {
     -fx-background-color: #e1e8f0;
-    -fx-background-radius: 6;
-    -fx-min-height: 6;
-    -fx-max-height: 6;
-    -fx-pref-width: 240;
+    -fx-background-radius: 4;
+    -fx-min-height: 4;
+    -fx-max-height: 4;
+    -fx-pref-width: 200;
+    -fx-max-width: 200;
 }
 
 .kpi-progress-fill {
     -fx-background-color: #1a365d;
-    -fx-background-radius: 6;
-    -fx-min-height: 6;
-    -fx-max-height: 6;
+    -fx-background-radius: 4;
+    -fx-min-height: 4;
+    -fx-max-height: 4;
 }
 
 .kpi-progress-text {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-text-fill: #829ab1;
 }
 
 .kpi-next-event-box {
     -fx-border-color: #e1e8f0 transparent transparent transparent;
     -fx-border-width: 1 0 0 0;
-    -fx-padding: 8 0 0 0;
+    -fx-padding: 6 0 0 0;
     -fx-spacing: 2;
 }
 
 .kpi-next-event-label {
-    -fx-font-size: 11px;
+    -fx-font-size: 10px;
     -fx-font-weight: bold;
     -fx-text-fill: #102a43;
 }
 
 .kpi-next-event-name {
-    -fx-font-size: 13px;
+    -fx-font-size: 12px;
     -fx-font-weight: bold;
     -fx-text-fill: #102a43;
 }
 
 .kpi-next-event-date {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-text-fill: #2563eb;
 }
 
@@ -443,24 +444,30 @@
     -fx-underline: true;
 }
 
+.filter-icon {
+    -fx-font-size: 14px;
+    -fx-text-fill: #829ab1;
+    -fx-cursor: hand;
+}
+
 .lesson-row {
     -fx-border-color: transparent transparent #e1e8f0 transparent;
     -fx-border-width: 0 0 1 0;
 }
 
 .lesson-row-title {
-    -fx-font-size: 14px;
+    -fx-font-size: 13px;
     -fx-font-weight: bold;
     -fx-text-fill: #102a43;
 }
 
 .lesson-row-subtitle {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-text-fill: #627d98;
 }
 
 .lesson-row-date {
-    -fx-font-size: 11px;
+    -fx-font-size: 10px;
     -fx-text-fill: #829ab1;
 }
 
@@ -471,9 +478,9 @@
 }
 
 .status-badge {
-    -fx-background-radius: 20;
-    -fx-padding: 5 14 5 14;
-    -fx-font-size: 11px;
+    -fx-background-radius: 16;
+    -fx-padding: 4 12 4 12;
+    -fx-font-size: 10px;
     -fx-font-weight: bold;
 }
 

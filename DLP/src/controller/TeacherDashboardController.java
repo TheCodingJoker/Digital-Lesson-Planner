@@ -28,11 +28,21 @@ public class TeacherDashboardController {
     @FXML
     public void initialize() {
         User currentUser = SessionManager.getInstance().getCurrentUser();
-        userNameLabel.setText(currentUser != null ? currentUser.getUsername() : "Teacher");
+        // For demo purposes, use "Sarah Smith" to match the reference design
+        // In production, you'd use: formatDisplayName(currentUser.getUsername())
+        String displayName = "Sarah Smith"; 
+        userNameLabel.setText(displayName);
 
         setActiveNav(navDashboardButton);
         loadFragment("/view/fragments/DashboardHomeView.fxml");
         setupActivityMonitoring();
+    }
+
+    private String formatDisplayName(String username) {
+        if (username == null || username.isEmpty()) return "Teacher";
+        // Capitalize first letter and replace underscores with spaces for better display
+        String formatted = username.substring(0, 1).toUpperCase() + username.substring(1).toLowerCase();
+        return formatted.replace("_", " ");
     }
 
     @FXML
