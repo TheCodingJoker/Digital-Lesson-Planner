@@ -241,9 +241,16 @@
 }
 
 /* Modal form dialogs (Lesson Plan / Class forms) */
-.form-scroll,
+.form-scroll {
+    -fx-background-color: white;
+}
+
 .form-scroll .viewport {
-    -fx-background-color: transparent;
+    -fx-background-color: white;
+}
+
+.form-scroll .content {
+    -fx-background-color: white;
 }
 
 .form-scroll TextArea .content {
@@ -453,6 +460,7 @@
 .lesson-row {
     -fx-border-color: transparent transparent #e1e8f0 transparent;
     -fx-border-width: 0 0 1 0;
+    -fx-padding: 8 4 8 4;
 }
 
 .lesson-row-title {
@@ -497,6 +505,32 @@
 .badge-extended {
     -fx-background-color: #ffedd5;
     -fx-text-fill: #ea580c;
+}
+
+/* ===================== Lesson action buttons ===================== */
+.lesson-action-button {
+    -fx-background-color: white;
+    -fx-background-radius: 6;
+    -fx-border-color: #e1e8f0;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-padding: 4 8 4 8;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+    -fx-min-width: 32;
+    -fx-min-height: 32;
+    -fx-text-fill: #486581;
+}
+
+.lesson-action-button:hover {
+    -fx-background-color: #f0f4f8;
+    -fx-border-color: #bcccdc;
+    -fx-text-fill: #102a43;
+}
+
+.lesson-action-button:hover:armed {
+    -fx-background-color: #d9e2ec;
+    -fx-border-color: #829ab1;
 }
 
 /* ===================== Custom modal chrome (Create Lesson Plan / Class / Calendar) ===================== */
