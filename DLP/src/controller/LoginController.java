@@ -114,15 +114,20 @@ public class LoginController {
             case "TEACHER":
                 fxmlPath = "/view/TeacherDashboardView.fxml";
                 break;
-            default:
-                // Principal/Admin dashboards aren't built yet
+            case "ADMINISTRATOR":
+                fxmlPath = "/view/AdminDashboard.fxml";
+                break;
+            case "PRINCIPAL_HOD":
+                // Principal dashboard not built yet
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Login Successful");
                 alert.setHeaderText("Welcome, " +
                     SessionManager.getInstance().getCurrentUser().getUsername());
                 alert.setContentText("Logged in as: " + role +
-                    "\n\nDashboard implementation coming soon.");
+                    "\n\nPrincipal dashboard implementation coming soon.");
                 alert.showAndWait();
+                return;
+            default:
                 return;
         }
 

@@ -88,6 +88,35 @@ public class MainApp extends Application {
                     "notes TEXT, " +
                     "createdAt TEXT DEFAULT (datetime('now','localtime')), " +
                     "FOREIGN KEY (teacherId) REFERENCES User(userId))");
+
+                // CAPS Database Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS CAPSEntry (" +
+                    "capsCode TEXT PRIMARY KEY, " +
+                    "subject TEXT NOT NULL, " +
+                    "gradeLevel TEXT NOT NULL, " +
+                    "term INTEGER NOT NULL, " +
+                    "topic TEXT NOT NULL, " +
+                    "outcomes TEXT NOT NULL, " +
+                    "assessmentStandards TEXT, " +
+                    "createdAt TEXT DEFAULT (datetime('now','localtime')))");
+
+                // School Events Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS SchoolEvent (" +
+                    "eventId TEXT PRIMARY KEY, " +
+                    "eventName TEXT NOT NULL, " +
+                    "eventDate TEXT NOT NULL, " +
+                    "eventType TEXT NOT NULL, " + // FULL_DAY or HALF_DAY
+                    "description TEXT, " +
+                    "createdAt TEXT DEFAULT (datetime('now','localtime')))");
+
+                // Audit Log Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS AuditLog (" +
+                    "entryId TEXT PRIMARY KEY, " +
+                    "userId TEXT NOT NULL, " +
+                    "action TEXT NOT NULL, " +
+                    "target TEXT NOT NULL, " +
+                    "timestamp TEXT DEFAULT (datetime('now','localtime')), " +
+                    "FOREIGN KEY (userId) REFERENCES User(userId))");
             }
             System.out.println("Database initialized successfully.");
         } catch (Exception e) {
