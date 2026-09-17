@@ -3,11 +3,14 @@ package dao;
 
 import model.User;
 import util.DatabaseConnection;
+import util.ErrorLogger;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserDAO {
+    
+    private ErrorLogger errorLogger = ErrorLogger.getInstance();
     
      public User findByUsername(String username) {
         String sql = "SELECT * FROM User WHERE username = ? AND isActive = 1";
@@ -22,7 +25,9 @@ public class UserDAO {
                 return extractUser(rs);
             }
         } catch (SQLException e) {
-            System.err.println("Error finding user: " + e.getMessage());
+            String errorMsg = "Error finding user with username: " + username;
+            System.err.println(errorMsg + ": " + e.getMessage());
+            errorLogger.logError("UserDAO", "findByUsername", errorMsg, e);
         }
         return null;
     }
@@ -123,6 +128,23 @@ public class UserDAO {
             System.err.println("Error deleting user: " + e.getMessage());
             return false;
         }
+    }
+
+    public List<User> getTeachers() {
+        List<User> teachers = new ArrayList<>();
+        String sql = "SELECT * FROM User WHERE role = 'TEACHER' AND isActive = 1 ORDER BY username ASC";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                teachers.add(extractUser(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting teachers: " + e.getMessage());
+        }
+        return teachers;
     }
     
 }

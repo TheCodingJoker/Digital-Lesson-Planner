@@ -77,6 +77,7 @@ public class MainApp extends Application {
                 // Defensive migration for teachers already running an earlier build of this app
                 addColumnIfMissing(stmt, "LessonPlan", "durationMinutes", "INTEGER DEFAULT 60");
                 addColumnIfMissing(stmt, "LessonPlan", "teachingActivities", "TEXT");
+                addColumnIfMissing(stmt, "LessonPlan", "snapshotId", "TEXT");
 
                 stmt.execute("CREATE TABLE IF NOT EXISTS SchoolClass (" +
                     "classId TEXT PRIMARY KEY, " +
@@ -117,6 +118,13 @@ public class MainApp extends Application {
                     "target TEXT NOT NULL, " +
                     "timestamp TEXT DEFAULT (datetime('now','localtime')), " +
                     "FOREIGN KEY (userId) REFERENCES User(userId))");
+
+                // CAPS Snapshot Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS CAPSSnapshot (" +
+                    "snapshotId TEXT PRIMARY KEY, " +
+                    "capturedAt TEXT NOT NULL, " +
+                    "originalData TEXT NOT NULL, " +
+                    "createdAt TEXT DEFAULT (datetime('now','localtime')))");
             }
             System.out.println("Database initialized successfully.");
         } catch (Exception e) {

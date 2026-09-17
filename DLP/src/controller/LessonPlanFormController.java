@@ -2,6 +2,9 @@
 package controller;
 
 import model.LessonPlan;
+import model.CAPSEntry;
+import dao.CAPSEntryDAO;
+import util.ErrorLogger;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
@@ -11,6 +14,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public class LessonPlanFormController {
@@ -29,9 +33,16 @@ public class LessonPlanFormController {
 
     private String editingLessonPlanId; // null when creating a new plan
     private String editingStatus;       // preserved as-is when editing; new plans default to SCHEDULED
+    
+    private CAPSEntryDAO capsEntryDAO;
+    private ErrorLogger errorLogger;
+    private boolean autoPopulateEnabled = true;
 
     @FXML
     public void initialize() {
+        capsEntryDAO = new CAPSEntryDAO();
+        errorLogger = ErrorLogger.getInstance();
+        
         subjectCombo.setItems(FXCollections.observableArrayList(
             "Mathematics", "English Home Language", "Life Skills",
             "Natural Sciences", "Life Sciences", "Social Sciences",
@@ -47,6 +58,9 @@ public class LessonPlanFormController {
         termCombo.setItems(FXCollections.observableArrayList("Term 1", "Term 2", "Term 3", "Term 4"));
 
         lessonDatePicker.setValue(LocalDate.now());
+        
+        // Add listeners for CAPS auto-populate
+        setupCAPSAutoPopulate();
     }
 
     /** Pre-fills the form when editing an existing lesson plan. */
@@ -141,5 +155,62 @@ public class LessonPlanFormController {
 
     private String emptyToNull(String value) {
         return (value == null || value.trim().isEmpty()) ? null : value.trim();
+    }
+    
+    private void setupCAPSAutoPopulate() {
+        // Add listeners to trigger CAPS auto-populate
+        gradeCombo.setOnAction(event -> autoPopulateCAPS());
+        subjectCombo.setOnAction(event -> autoPopulateCAPS());
+        termCombo.setOnAction(event -> autoPopulateCAPS());
+    }
+    
+    private void autoPopulateCAPS() {
+        if (!autoPopulateEnabled) {
+            return;
+        }
+        
+        String grade = gradeCombo.getValue();
+        String subject = subjectCombo.getValue();
+        String term = termCombo.getValue();
+        
+        if (grade == null || subject == null || term == null) {
+            return;
+        }
+        
+        // Convert term string to integer
+        int termNumber = 1;
+        if (term.equals("Term 1")) termNumber = 1;
+        else if (term.equals("Term 2")) termNumber = 2;
+        else if (term.equals("Term 3")) termNumber = 3;
+        else if (term.equals("Term 4")) termNumber = 4;
+        
+        try {
+            // Search for CAPS entry matching the criteria
+            List<CAPSEntry> capsEntries = capsEntryDAO.searchCAPSEntries(grade, subject, termNumber);
+            
+            if (!capsEntries.isEmpty()) {
+                // Use the first matching CAPS entry
+                CAPSEntry entry = capsEntries.get(0);
+                
+                // Auto-populate objectives and assessment
+                if (entry.getOutcomes() != null && !entry.getOutcomes().isEmpty()) {
+                    objectivesArea.setText(entry.getOutcomes());
+                }
+                
+                if (entry.getAssessmentStandards() != null && !entry.getAssessmentStandards().isEmpty()) {
+                    assessmentArea.setText(entry.getAssessmentStandards());
+                }
+                
+                errorLogger.logInfo("LessonPlanFormController", "autoPopulateCAPS", 
+                    "Auto-populated CAPS data for " + grade + " " + subject + " " + term);
+            }
+        } catch (Exception e) {
+            errorLogger.logError("LessonPlanFormController", "autoPopulateCAPS", 
+                "Failed to auto-populate CAPS data", e);
+        }
+    }
+    
+    public void setAutoPopulateEnabled(boolean enabled) {
+        this.autoPopulateEnabled = enabled;
     }
 }

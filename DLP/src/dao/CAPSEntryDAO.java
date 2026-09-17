@@ -97,6 +97,27 @@ public class CAPSEntryDAO {
         }
         return null;
     }
+    
+    public List<CAPSEntry> searchCAPSEntries(String gradeLevel, String subject, int term) {
+        List<CAPSEntry> entries = new ArrayList<>();
+        String sql = "SELECT * FROM CAPSEntry WHERE gradeLevel = ? AND subject = ? AND term = ?";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, gradeLevel);
+            pstmt.setString(2, subject);
+            pstmt.setInt(3, term);
+            ResultSet rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                entries.add(extractCAPSEntry(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error searching CAPS entries: " + e.getMessage());
+        }
+        return entries;
+    }
 
     private CAPSEntry extractCAPSEntry(ResultSet rs) throws SQLException {
         CAPSEntry entry = new CAPSEntry();

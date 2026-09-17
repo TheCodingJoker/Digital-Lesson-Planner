@@ -2,20 +2,37 @@
 package dao;
 
 import model.LessonPlan;
+import model.CAPSEntry;
 import util.DatabaseConnection;
+import util.ErrorLogger;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class LessonPlanDAO {
+    
+    private CAPSSnapshotDAO capsSnapshotDAO = new CAPSSnapshotDAO();
+    private ErrorLogger errorLogger = ErrorLogger.getInstance();
 
-    public boolean createLessonPlan(LessonPlan plan) {
+    public boolean createLessonPlan(LessonPlan plan, CAPSEntry capsEntry) {
+        // Create CAPS snapshot if CAPS entry is provided
+        if (capsEntry != null) {
+            String snapshotId = UUID.randomUUID().toString();
+            plan.setSnapshotId(snapshotId);
+            
+            // Create the snapshot
+            if (!capsSnapshotDAO.createSnapshot(capsEntry)) {
+                System.err.println("Warning: Failed to create CAPS snapshot for lesson plan");
+            }
+        }
+        
         String sql = "INSERT INTO LessonPlan " +
             "(lessonPlanId, teacherId, title, subject, gradeLevel, curriculumReference, " +
             "topic, durationMinutes, objectives, teachingActivities, assessmentMethod, resources, " +
-            "lessonDate, status) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "lessonDate, status, snapshotId) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -34,12 +51,19 @@ public class LessonPlanDAO {
             pstmt.setString(12, plan.getResources());
             pstmt.setString(13, plan.getLessonDate());
             pstmt.setString(14, plan.getStatus());
+            pstmt.setString(15, plan.getSnapshotId());
 
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("Error creating lesson plan: " + e.getMessage());
+            String errorMsg = "Error creating lesson plan for teacher: " + plan.getTeacherId();
+            System.err.println(errorMsg + ": " + e.getMessage());
+            errorLogger.logError("LessonPlanDAO", "createLessonPlan", errorMsg, e);
             return false;
         }
+    }
+
+    public boolean createLessonPlan(LessonPlan plan) {
+        return createLessonPlan(plan, null);
     }
 
     public boolean updateLessonPlan(LessonPlan plan) {
@@ -115,6 +139,10 @@ public class LessonPlanDAO {
             System.err.println("Error finding lesson plans: " + e.getMessage());
         }
         return plans;
+    }
+
+    public List<LessonPlan> getLessonsByUserId(String userId) {
+        return findByTeacher(userId);
     }
 
     public List<LessonPlan> getAllLessonPlans() {
@@ -217,6 +245,15 @@ public class LessonPlanDAO {
         plan.setStatus(rs.getString("status"));
         plan.setCreatedAt(rs.getString("createdAt"));
         plan.setUpdatedAt(rs.getString("updatedAt"));
+        
+        // Extract snapshotId if available
+        try {
+            plan.setSnapshotId(rs.getString("snapshotId"));
+        } catch (SQLException e) {
+            // Column might not exist in older database versions
+            plan.setSnapshotId(null);
+        }
+        
         return plan;
     }
 }
