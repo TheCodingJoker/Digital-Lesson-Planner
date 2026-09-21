@@ -3,147 +3,193 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml/1"
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="controller.PrincipalDashboardController"
-            styleClass="main-container">
+            styleClass="dashboard-root"
+            stylesheets="@styles/dlp-theme.css">
 
     <top>
-        <HBox spacing="20" alignment="CENTER_LEFT" styleClass="header-bar">
+        <HBox styleClass="app-header" alignment="CENTER_LEFT" spacing="12">
             <padding>
-                <Insets top="15" right="20" bottom="15" left="20"/>
+                <Insets top="12" right="24" bottom="12" left="24"/>
             </padding>
-            
-            <Label text="Digital Lesson Planner" styleClass="header-title"/>
-            <Label text="Curriculum Progress Dashboard" styleClass="header-subtitle"/>
-            <Label fx:id="principalNameLabel" text="Welcome, Principal" HBox.hgrow="ALWAYS" styleClass="header-user"/>
-            <Button text="Logout" onAction="#handleLogout" styleClass="logout-button"/>
+
+            <Label text="&#128202;" styleClass="app-header-icon"/>
+            <VBox spacing="1">
+                <Label text="Curriculum Progress Dashboard" styleClass="app-header-title"/>
+                <Label text="Monitor teacher progress and curriculum delivery" styleClass="app-header-subtitle"/>
+            </VBox>
+
+            <Pane HBox.hgrow="ALWAYS"/>
+
+            <VBox spacing="0" alignment="CENTER_RIGHT">
+                <Label fx:id="userNameLabel" styleClass="app-header-username"/>
+                <Label text="Principal" styleClass="app-header-userrole"/>
+            </VBox>
+            <Button fx:id="logoutButton" text="&#10132;" onAction="#handleLogout" styleClass="logout-icon-button"/>
         </HBox>
     </top>
 
     <left>
-        <VBox spacing="5" prefWidth="200" styleClass="sidebar">
+        <VBox styleClass="sidebar" prefWidth="220" spacing="4">
             <padding>
-                <Insets top="20" right="15" bottom="20" left="15"/>
+                <Insets top="24" right="0" bottom="24" left="0"/>
             </padding>
-            
-            <Label text="PRINCIPAL MENU" styleClass="sidebar-title"/>
-            
-            <Button text="Dashboard" maxWidth="Infinity" onAction="#showDashboard" styleClass="sidebar-button-active"/>
-            <Button text="Teachers" maxWidth="Infinity" onAction="#showTeachers" styleClass="sidebar-button"/>
-            <Button text="Calendar" maxWidth="Infinity" onAction="#showCalendar" styleClass="sidebar-button"/>
-            <Button text="Reports" maxWidth="Infinity" onAction="#showReports" styleClass="sidebar-button"/>
-            
-            <VBox VBox.vgrow="ALWAYS"/>
-            
-            <Button text="Refresh" maxWidth="Infinity" onAction="#refreshDashboard" styleClass="refresh-button"/>
+            <Button fx:id="navDashboardButton" text="Dashboard" onAction="#showDashboard"
+                    styleClass="nav-button" maxWidth="Infinity"/>
+            <Button fx:id="navTeachersButton" text="Teachers" onAction="#showTeachers"
+                    styleClass="nav-button" maxWidth="Infinity"/>
+            <Button fx:id="navCalendarButton" text="Calendar" onAction="#showCalendar"
+                    styleClass="nav-button" maxWidth="Infinity"/>
+            <Button fx:id="navReportsButton" text="Reports" onAction="#showReports"
+                    styleClass="nav-button" maxWidth="Infinity"/>
         </VBox>
     </left>
 
     <center>
-        <VBox spacing="20" styleClass="main-content">
-            <padding>
-                <Insets top="20" right="20" bottom="20" left="20"/>
-            </padding>
-
-            <!-- KPI Summary Cards -->
-            <HBox spacing="15">
-                <VBox spacing="8" prefWidth="200" prefHeight="100" alignment="CENTER" styleClass="kpi-card">
-                    <Label text="Total Teachers" styleClass="kpi-label"/>
-                    <Label fx:id="totalTeachersLabel" text="0" styleClass="kpi-value"/>
-                </VBox>
-                
-                <VBox spacing="8" prefWidth="200" prefHeight="100" alignment="CENTER" styleClass="kpi-card">
-                    <Label text="Average Progress" styleClass="kpi-label"/>
-                    <Label fx:id="averageProgressLabel" text="0%" styleClass="kpi-value"/>
-                </VBox>
-                
-                <VBox spacing="8" prefWidth="200" prefHeight="100" alignment="CENTER" styleClass="kpi-card-success">
-                    <Label text="On Track" styleClass="kpi-label"/>
-                    <Label fx:id="onTrackLabel" text="0" styleClass="kpi-value"/>
-                </VBox>
-                
-                <VBox spacing="8" prefWidth="200" prefHeight="100" alignment="CENTER" styleClass="kpi-card-warning">
-                    <Label text="Need Support" styleClass="kpi-label"/>
-                    <Label fx:id="needSupportLabel" text="0" styleClass="kpi-value"/>
-                </VBox>
-            </HBox>
-
-            <!-- Overall Status Section -->
-            <HBox spacing="20">
-                <VBox spacing="15" prefWidth="400" styleClass="card">
-                    <padding>
-                        <Insets top="15" right="15" bottom="15" left="15"/>
-                    </padding>
-                    <Label text="Overall Status" styleClass="section-title"/>
-                    <HBox spacing="20" alignment="CENTER">
-                        <VBox spacing="5" alignment="CENTER">
-                            <Label text="On Track" styleClass="status-label-green"/>
-                            <Label fx:id="onTrackPercentLabel" text="0%" styleClass="status-value"/>
-                        </VBox>
-                        <VBox spacing="5" alignment="CENTER">
-                            <Label text="At Risk" styleClass="status-label-amber"/>
-                            <Label fx:id="atRiskPercentLabel" text="0%" styleClass="status-value"/>
-                        </VBox>
-                        <VBox spacing="5" alignment="CENTER">
-                            <Label text="Behind" styleClass="status-label-red"/>
-                            <Label fx:id="behindPercentLabel" text="0%" styleClass="status-value"/>
-                        </VBox>
-                    </HBox>
-                </VBox>
-                
-                <VBox spacing="15" prefWidth="400" styleClass="card">
-                    <padding>
-                        <Insets top="15" right="15" bottom="15" left="15"/>
-                    </padding>
-                    <Label text="Subject Area Progress" styleClass="section-title"/>
-                    <HBox spacing="15" alignment="CENTER">
-                        <VBox spacing="5" alignment="CENTER">
-                            <Label text="Mathematics" styleClass="subject-label"/>
-                            <Label fx:id="mathProgressLabel" text="0%" styleClass="subject-value"/>
-                        </VBox>
-                        <VBox spacing="5" alignment="CENTER">
-                            <Label text="Sciences" styleClass="subject-label"/>
-                            <Label fx:id="scienceProgressLabel" text="0%" styleClass="subject-value"/>
-                        </VBox>
-                        <VBox spacing="5" alignment="CENTER">
-                            <Label text="Languages" styleClass="subject-label"/>
-                            <Label fx:id="languageProgressLabel" text="0%" styleClass="subject-value"/>
-                        </VBox>
-                    </HBox>
-                </VBox>
-            </HBox>
-
-            <!-- Teacher Progress Overview -->
-            <VBox spacing="15" styleClass="card" VBox.vgrow="ALWAYS">
+        <StackPane fx:id="contentArea" styleClass="dashboard-content">
+            <VBox spacing="24" styleClass="content-area">
                 <padding>
-                    <Insets top="15" right="15" bottom="15" left="15"/>
+                    <Insets top="24" right="24" bottom="24" left="24"/>
                 </padding>
-                
-                <HBox spacing="15" alignment="CENTER_LEFT">
-                    <Label text="Teacher Progress Overview" styleClass="section-title"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Button text="Export Report" onAction="#handleExportReport" styleClass="export-button"/>
+
+                <!-- KPI Summary Cards -->
+                <HBox spacing="16">
+                    <VBox spacing="8" prefWidth="200" prefHeight="100" alignment="CENTER" styleClass="kpi-card">
+                        <Label text="Total Teachers" styleClass="kpi-label"/>
+                        <Label fx:id="totalTeachersLabel" text="0" styleClass="kpi-value"/>
+                    </VBox>
+                    
+                    <VBox spacing="8" prefWidth="200" prefHeight="100" alignment="CENTER" styleClass="kpi-card">
+                        <Label text="Avg. Progress" styleClass="kpi-label"/>
+                        <Label fx:id="averageProgressLabel" text="0%" styleClass="kpi-value"/>
+                    </VBox>
+                    
+                    <VBox spacing="8" prefWidth="200" prefHeight="100" alignment="CENTER" styleClass="kpi-card-success">
+                        <Label text="On Track" styleClass="kpi-label"/>
+                        <Label fx:id="onTrackLabel" text="0" styleClass="kpi-value"/>
+                    </VBox>
+                    
+                    <VBox spacing="8" prefWidth="200" prefHeight="100" alignment="CENTER" styleClass="kpi-card-warning">
+                        <Label text="Need Support" styleClass="kpi-label"/>
+                        <Label fx:id="needSupportLabel" text="0" styleClass="kpi-value"/>
+                    </VBox>
                 </HBox>
-                
-                <TableView fx:id="teacherProgressTable" VBox.vgrow="ALWAYS" styleClass="data-table">
-                    <columns>
-                        <TableColumn fx:id="teacherNameColumn" text="Teacher Name" prefWidth="200"/>
-                        <TableColumn fx:id="subjectColumn" text="Subject" prefWidth="150"/>
-                        <TableColumn fx:id="gradeColumn" text="Grade" prefWidth="100"/>
-                        <TableColumn fx:id="progressColumn" text="Progress" prefWidth="150"/>
-                        <TableColumn fx:id="lessonCountColumn" text="Lessons" prefWidth="100"/>
-                        <TableColumn fx:id="statusColumn" text="Status" prefWidth="120"/>
-                        <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150"/>
-                    </columns>
-                </TableView>
+
+                <!-- Charts Section -->
+                <HBox spacing="20">
+                    <!-- Subject Area Progress Bar Chart -->
+                    <VBox spacing="16" prefWidth="400" styleClass="card">
+                        <padding>
+                            <Insets top="20" right="20" bottom="20" left="20"/>
+                        </padding>
+                        <Label text="Subject Area Progress" styleClass="section-label"/>
+                        
+                        <VBox spacing="14">
+                            <VBox spacing="4">
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Label text="Mathematics" prefWidth="100" styleClass="subject-label"/>
+                                    <Label fx:id="mathProgressLabel" text="0%" prefWidth="50" styleClass="subject-percent-label"/>
+                                </HBox>
+                                <ProgressBar fx:id="mathProgressBar" prefWidth="280" progress="0" styleClass="subject-progress-bar-blue"/>
+                            </VBox>
+                            
+                            <VBox spacing="4">
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Label text="Sciences" prefWidth="100" styleClass="subject-label"/>
+                                    <Label fx:id="scienceProgressLabel" text="0%" prefWidth="50" styleClass="subject-percent-label"/>
+                                </HBox>
+                                <ProgressBar fx:id="scienceProgressBar" prefWidth="280" progress="0" styleClass="subject-progress-bar-green"/>
+                            </VBox>
+                            
+                            <VBox spacing="4">
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Label text="Languages" prefWidth="100" styleClass="subject-label"/>
+                                    <Label fx:id="languageProgressLabel" text="0%" prefWidth="50" styleClass="subject-percent-label"/>
+                                </HBox>
+                                <ProgressBar fx:id="languageProgressBar" prefWidth="280" progress="0" styleClass="subject-progress-bar-purple"/>
+                            </VBox>
+                            
+                            <VBox spacing="4">
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Label text="Humanities" prefWidth="100" styleClass="subject-label"/>
+                                    <Label fx:id="humanitiesProgressLabel" text="0%" prefWidth="50" styleClass="subject-percent-label"/>
+                                </HBox>
+                                <ProgressBar fx:id="humanitiesProgressBar" prefWidth="280" progress="0" styleClass="subject-progress-bar-orange"/>
+                            </VBox>
+                        </VBox>
+                    </VBox>
+                    
+                    <!-- Overall Status -->
+                    <VBox spacing="16" prefWidth="400" styleClass="card">
+                        <padding>
+                            <Insets top="20" right="20" bottom="20" left="20"/>
+                        </padding>
+                        <Label text="Overall Status" styleClass="section-label"/>
+                        
+                        <VBox spacing="14">
+                            <VBox spacing="4">
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Label text="On Track" prefWidth="100" styleClass="status-label-green"/>
+                                    <Label fx:id="onTrackPercentLabel" text="0%" prefWidth="50" styleClass="status-percent-label"/>
+                                </HBox>
+                                <ProgressBar fx:id="onTrackProgressBar" prefWidth="280" progress="0" styleClass="status-progress-green"/>
+                            </VBox>
+                            
+                            <VBox spacing="4">
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Label text="At Risk" prefWidth="100" styleClass="status-label-amber"/>
+                                    <Label fx:id="atRiskPercentLabel" text="0%" prefWidth="50" styleClass="status-percent-label"/>
+                                </HBox>
+                                <ProgressBar fx:id="atRiskProgressBar" prefWidth="280" progress="0" styleClass="status-progress-amber"/>
+                            </VBox>
+                            
+                            <VBox spacing="4">
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Label text="Behind" prefWidth="100" styleClass="status-label-red"/>
+                                    <Label fx:id="behindPercentLabel" text="0%" prefWidth="50" styleClass="status-percent-label"/>
+                                </HBox>
+                                <ProgressBar fx:id="behindProgressBar" prefWidth="280" progress="0" styleClass="status-progress-red"/>
+                            </VBox>
+                        </VBox>
+                    </VBox>
+                </HBox>
+
+                <!-- Teacher Progress Overview -->
+                <VBox spacing="12" styleClass="card" VBox.vgrow="ALWAYS">
+                    <padding>
+                        <Insets top="16" right="16" bottom="16" left="16"/>
+                    </padding>
+                    
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <Label text="Teacher Progress Overview" styleClass="section-label"/>
+                        <Pane HBox.hgrow="ALWAYS"/>
+                        <Button text="Export Report" onAction="#handleExportReport" styleClass="primary-button"/>
+                    </HBox>
+                    
+                    <TableView fx:id="teacherProgressTable" VBox.vgrow="ALWAYS" styleClass="data-table">
+                        <columns>
+                            <TableColumn fx:id="teacherNameColumn" text="Teacher" prefWidth="180"/>
+                            <TableColumn fx:id="subjectColumn" text="Subject" prefWidth="120"/>
+                            <TableColumn fx:id="gradeColumn" text="Grade" prefWidth="80"/>
+                            <TableColumn fx:id="progressColumn" text="Progress" prefWidth="180"/>
+                            <TableColumn fx:id="lessonsColumn" text="Lessons" prefWidth="100"/>
+                            <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
+                            <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="120"/>
+                        </columns>
+                    </TableView>
+                </VBox>
             </VBox>
-        </VBox>
+        </StackPane>
     </center>
+
 </BorderPane>

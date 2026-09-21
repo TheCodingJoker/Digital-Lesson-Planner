@@ -968,3 +968,146 @@
     -fx-padding: 8 16;
     -fx-background-radius: 5;
 }
+
+/* ===================== Principal Dashboard ===================== */
+.kpi-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-padding: 24;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 12, 0.15, 0, 4);
+}
+
+.kpi-card-success {
+    -fx-background-color: #d1fae5;
+    -fx-background-radius: 12;
+    -fx-padding: 24;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 12, 0.15, 0, 4);
+}
+
+.kpi-card-warning {
+    -fx-background-color: #fef3c7;
+    -fx-background-radius: 12;
+    -fx-padding: 24;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 12, 0.15, 0, 4);
+}
+
+.kpi-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #64748b;
+    -fx-font-weight: 500;
+}
+
+.kpi-value {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+}
+
+.card {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 12, 0.15, 0, 4);
+}
+
+.status-label-green {
+    -fx-text-fill: #16a34a;
+    -fx-font-weight: 600;
+    -fx-font-size: 13px;
+}
+
+.status-label-amber {
+    -fx-text-fill: #d97706;
+    -fx-font-weight: 600;
+    -fx-font-size: 13px;
+}
+
+.status-label-red {
+    -fx-text-fill: #dc2626;
+    -fx-font-weight: 600;
+    -fx-font-size: 13px;
+}
+
+.status-value {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+}
+
+.subject-label {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 12px;
+}
+
+.subject-value {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+}
+
+.content-area {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 12;
+}
+
+/* Progress Bar Styles */
+.subject-progress-bar {
+    -fx-accent: #3b82f6;
+    -fx-background-color: #e2e8f0;
+    -fx-background-radius: 4;
+}
+
+.subject-progress-bar-blue {
+    -fx-accent: #3b82f6;
+    -fx-background-color: #e2e8f0;
+    -fx-background-radius: 4;
+}
+
+.subject-progress-bar-green {
+    -fx-accent: #10b981;
+    -fx-background-color: #e2e8f0;
+    -fx-background-radius: 4;
+}
+
+.subject-progress-bar-purple {
+    -fx-accent: #8b5cf6;
+    -fx-background-color: #e2e8f0;
+    -fx-background-radius: 4;
+}
+
+.subject-progress-bar-orange {
+    -fx-accent: #f59e0b;
+    -fx-background-color: #e2e8f0;
+    -fx-background-radius: 4;
+}
+
+.subject-percent-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #1e293b;
+    -fx-alignment: CENTER_RIGHT;
+}
+
+.status-progress-green {
+    -fx-accent: #16a34a;
+    -fx-background-color: #e2e8f0;
+    -fx-background-radius: 4;
+}
+
+.status-progress-amber {
+    -fx-accent: #d97706;
+    -fx-background-color: #e2e8f0;
+    -fx-background-radius: 4;
+}
+
+.status-progress-red {
+    -fx-accent: #dc2626;
+    -fx-background-color: #e2e8f0;
+    -fx-background-radius: 4;
+}
+
+.status-percent-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #1e293b;
+    -fx-alignment: CENTER_RIGHT;
+}
