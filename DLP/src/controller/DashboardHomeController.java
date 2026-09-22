@@ -4,6 +4,8 @@ package controller;
 import dao.LessonPlanDAO;
 import model.LessonPlan;
 import model.User;
+import service.SchedulingEngine;
+import service.ExportService;
 import util.DialogHelper;
 import util.SessionManager;
 import javafx.fxml.FXML;
@@ -14,6 +16,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
@@ -54,6 +57,7 @@ public class DashboardHomeController {
     @FXML private VBox recentLessonsBox;
 
     private final LessonPlanDAO lessonPlanDAO = new LessonPlanDAO();
+    private final SchedulingEngine schedulingEngine = SchedulingEngine.getInstance();
 
     private static final DateTimeFormatter LONG_DATE = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy");
     private static final DateTimeFormatter ISO_LIKE_DATE = DateTimeFormatter.ofPattern("yyyy/MM/dd");
@@ -323,6 +327,8 @@ public class DashboardHomeController {
         
         boolean success = lessonPlanDAO.updateStatus(lessonPlan.getLessonPlanId(), LessonPlan.STATUS_COMPLETED);
         if (success) {
+            // Trigger scheduling engine for status change
+            schedulingEngine.handleLessonStatusChange(lessonPlan.getLessonPlanId(), LessonPlan.STATUS_COMPLETED);
             showSuccessMessage("Lesson marked as complete!");
             loadDashboardData();
         } else {
@@ -335,7 +341,9 @@ public class DashboardHomeController {
         
         boolean success = lessonPlanDAO.updateStatus(lessonPlan.getLessonPlanId(), LessonPlan.STATUS_EXTENDED);
         if (success) {
-            showSuccessMessage("Lesson extended!");
+            // Trigger scheduling engine for status change (applies Push-Back Protocol)
+            schedulingEngine.handleLessonStatusChange(lessonPlan.getLessonPlanId(), LessonPlan.STATUS_EXTENDED);
+            showSuccessMessage("Lesson extended! Subsequent lessons will be rescheduled.");
             loadDashboardData();
         } else {
             showErrorMessage("Failed to extend lesson.");
@@ -365,40 +373,73 @@ public class DashboardHomeController {
     private void saveToComputer(LessonPlan lessonPlan) {
         if (lessonPlan == null) return;
         
-        try {
-            // Create a file name based on the lesson title
-            String fileName = lessonPlan.getTitle().replaceAll("[^a-zA-Z0-9\\s]", "").trim() + ".txt";
+        // Show format selection dialog
+        ChoiceDialog<String> formatDialog = new ChoiceDialog<>(
+            "PDF",
+            "PDF",
+            "Word (DOCX)",
+            "Plain Text"
+        );
+        formatDialog.setTitle("Export Lesson Plan");
+        formatDialog.setHeaderText("Select export format");
+        formatDialog.setContentText("Choose the format to export this lesson plan:");
+        
+        Optional<String> result = formatDialog.showAndWait();
+        if (result.isPresent()) {
+            String format = result.get();
+            String fileName = lessonPlan.getTitle().replaceAll("[^a-zA-Z0-9\\s]", "").trim();
             File downloadsFolder = new File(System.getProperty("user.home"), "Downloads");
-            File file = new File(downloadsFolder, fileName);
             
-            // Write lesson plan content to file
-            try (FileWriter writer = new FileWriter(file)) {
-                writer.write("LESSON PLAN\n");
-                writer.write("============\n\n");
-                writer.write("Title: " + lessonPlan.getTitle() + "\n");
-                writer.write("Subject: " + lessonPlan.getSubject() + "\n");
-                writer.write("Grade Level: " + lessonPlan.getGradeLevel() + "\n");
-                writer.write("Topic: " + (lessonPlan.getTopic() != null ? lessonPlan.getTopic() : "N/A") + "\n");
-                writer.write("Duration: " + lessonPlan.getDurationMinutes() + " minutes\n");
-                writer.write("Date: " + (lessonPlan.getLessonDate() != null ? lessonPlan.getLessonDate() : "N/A") + "\n");
-                writer.write("Status: " + lessonPlan.getStatus() + "\n\n");
-                writer.write("OBJECTIVES\n");
-                writer.write("----------\n");
-                writer.write((lessonPlan.getObjectives() != null ? lessonPlan.getObjectives() : "N/A") + "\n\n");
-                writer.write("TEACHING ACTIVITIES\n");
-                writer.write("-------------------\n");
-                writer.write((lessonPlan.getTeachingActivities() != null ? lessonPlan.getTeachingActivities() : "N/A") + "\n\n");
-                writer.write("RESOURCES\n");
-                writer.write("---------\n");
-                writer.write((lessonPlan.getResources() != null ? lessonPlan.getResources() : "N/A") + "\n\n");
-                writer.write("ASSESSMENT METHOD\n");
-                writer.write("-----------------\n");
-                writer.write((lessonPlan.getAssessmentMethod() != null ? lessonPlan.getAssessmentMethod() : "N/A") + "\n");
+            ExportService exportService = ExportService.getInstance();
+            
+            try {
+                if (format.equals("PDF")) {
+                    File pdfFile = new File(downloadsFolder, fileName + ".pdf");
+                    boolean success = exportService.exportToPDF(lessonPlan, pdfFile.getAbsolutePath());
+                    if (success) {
+                        showSuccessMessage("Lesson plan exported to PDF: " + pdfFile.getAbsolutePath());
+                    } else {
+                        showErrorMessage("Failed to export to PDF.");
+                    }
+                } else if (format.equals("Word (DOCX)")) {
+                    File docxFile = new File(downloadsFolder, fileName + ".docx");
+                    boolean success = exportService.exportToWord(lessonPlan, docxFile.getAbsolutePath());
+                    if (success) {
+                        showSuccessMessage("Lesson plan exported to Word: " + docxFile.getAbsolutePath());
+                    } else {
+                        showErrorMessage("Failed to export to Word.");
+                    }
+                } else {
+                    // Plain text fallback
+                    File txtFile = new File(downloadsFolder, fileName + ".txt");
+                    try (FileWriter writer = new FileWriter(txtFile)) {
+                        writer.write("LESSON PLAN\n");
+                        writer.write("============\n\n");
+                        writer.write("Title: " + lessonPlan.getTitle() + "\n");
+                        writer.write("Subject: " + lessonPlan.getSubject() + "\n");
+                        writer.write("Grade Level: " + lessonPlan.getGradeLevel() + "\n");
+                        writer.write("Topic: " + (lessonPlan.getTopic() != null ? lessonPlan.getTopic() : "N/A") + "\n");
+                        writer.write("Duration: " + lessonPlan.getDurationMinutes() + " minutes\n");
+                        writer.write("Date: " + (lessonPlan.getLessonDate() != null ? lessonPlan.getLessonDate() : "N/A") + "\n");
+                        writer.write("Status: " + lessonPlan.getStatus() + "\n\n");
+                        writer.write("OBJECTIVES\n");
+                        writer.write("----------\n");
+                        writer.write((lessonPlan.getObjectives() != null ? lessonPlan.getObjectives() : "N/A") + "\n\n");
+                        writer.write("TEACHING ACTIVITIES\n");
+                        writer.write("-------------------\n");
+                        writer.write((lessonPlan.getTeachingActivities() != null ? lessonPlan.getTeachingActivities() : "N/A") + "\n\n");
+                        writer.write("RESOURCES\n");
+                        writer.write("---------\n");
+                        writer.write((lessonPlan.getResources() != null ? lessonPlan.getResources() : "N/A") + "\n\n");
+                        writer.write("ASSESSMENT METHOD\n");
+                        writer.write("-----------------\n");
+                        writer.write((lessonPlan.getAssessmentMethod() != null ? lessonPlan.getAssessmentMethod() : "N/A") + "\n");
+                    }
+                    showSuccessMessage("Lesson plan saved to: " + txtFile.getAbsolutePath());
+                }
+            } catch (IOException e) {
+                showErrorMessage("Failed to save lesson plan: " + e.getMessage());
             }
-            
-            showSuccessMessage("Lesson plan saved to: " + file.getAbsolutePath());
-        } catch (IOException e) {
-            showErrorMessage("Failed to save lesson plan: " + e.getMessage());
         }
     }
 

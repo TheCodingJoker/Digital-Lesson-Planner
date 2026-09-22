@@ -32,6 +32,7 @@
                 <Label fx:id="userNameLabel" styleClass="app-header-username"/>
                 <Label text="Teacher" styleClass="app-header-userrole"/>
             </VBox>
+            <Button fx:id="feedbackButton" text="&#128172;" onAction="#handleFeedback" styleClass="icon-button"/>
             <Button fx:id="logoutButton" text="&#10132;" onAction="#handleLogout" styleClass="logout-icon-button"/>
         </HBox>
     </top>

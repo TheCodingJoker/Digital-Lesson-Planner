@@ -108,7 +108,11 @@ public class MainApp extends Application {
                     "eventDate TEXT NOT NULL, " +
                     "eventType TEXT NOT NULL, " + // FULL_DAY or HALF_DAY
                     "description TEXT, " +
+                    "academicYear INTEGER DEFAULT 2026, " +
                     "createdAt TEXT DEFAULT (datetime('now','localtime')))");
+                
+                // Add academicYear column if it doesn't exist (backwards compatibility)
+                addColumnIfMissing(stmt, "SchoolEvent", "academicYear", "INTEGER DEFAULT 2026");
 
                 // Audit Log Table
                 stmt.execute("CREATE TABLE IF NOT EXISTS AuditLog (" +
@@ -125,6 +129,20 @@ public class MainApp extends Application {
                     "capturedAt TEXT NOT NULL, " +
                     "originalData TEXT NOT NULL, " +
                     "createdAt TEXT DEFAULT (datetime('now','localtime')))");
+
+                // Feedback Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS Feedback (" +
+                    "feedbackId TEXT PRIMARY KEY, " +
+                    "userId TEXT NOT NULL, " +
+                    "feedbackType TEXT NOT NULL, " +
+                    "title TEXT NOT NULL, " +
+                    "description TEXT NOT NULL, " +
+                    "status TEXT NOT NULL DEFAULT 'OPEN', " +
+                    "priority TEXT NOT NULL DEFAULT 'MEDIUM', " +
+                    "adminNotes TEXT, " +
+                    "createdAt TEXT DEFAULT (datetime('now','localtime')), " +
+                    "updatedAt TEXT DEFAULT (datetime('now','localtime')), " +
+                    "FOREIGN KEY (userId) REFERENCES User(userId))");
             }
             System.out.println("Database initialized successfully.");
         } catch (Exception e) {

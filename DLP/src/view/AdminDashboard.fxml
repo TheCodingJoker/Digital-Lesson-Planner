@@ -35,6 +35,7 @@
                 <Label fx:id="userNameLabel" styleClass="app-header-username"/>
                 <Label text="Administrator" styleClass="app-header-userrole"/>
             </VBox>
+            <Button fx:id="feedbackButton" text="💬" onAction="#handleFeedback" styleClass="icon-button"/>
             <Button fx:id="logoutButton" text="→" onAction="#handleLogout" styleClass="logout-icon-button"/>
         </HBox>
     </top>
@@ -123,13 +124,13 @@
                     <padding>
                         <Insets top="24" right="24" bottom="24" left="24"/>
                     </padding>
-                    
+
                     <HBox alignment="CENTER_LEFT" spacing="12">
                         <Label text="System Audit Log" styleClass="section-label"/>
                         <Region HBox.hgrow="ALWAYS"/>
                         <Button text="Export Log" onAction="#handleExportLog" styleClass="secondary-button"/>
                     </HBox>
-                    
+
                     <TableView fx:id="auditLogTable" styleClass="data-table">
                         <columns>
                             <TableColumn fx:id="auditActionColumn" text="Action" prefWidth="200"/>
@@ -139,7 +140,32 @@
                     </TableView>
                 </VBox>
             </Tab>
-            
+
+            <!-- Feedback Tab -->
+            <Tab text="Feedback" styleClass="admin-tab">
+                <VBox spacing="16" styleClass="tab-content">
+                    <padding>
+                        <Insets top="24" right="24" bottom="24" left="24"/>
+                    </padding>
+
+                    <HBox alignment="CENTER_LEFT" spacing="12">
+                        <Label text="User Feedback" styleClass="section-label"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <TableView fx:id="feedbackTable" styleClass="data-table">
+                        <columns>
+                            <TableColumn fx:id="feedbackTitleColumn" text="Title" prefWidth="200"/>
+                            <TableColumn fx:id="feedbackTypeColumn" text="Type" prefWidth="120"/>
+                            <TableColumn fx:id="feedbackPriorityColumn" text="Priority" prefWidth="100"/>
+                            <TableColumn fx:id="feedbackStatusColumn" text="Status" prefWidth="120"/>
+                            <TableColumn fx:id="feedbackDateColumn" text="Submitted" prefWidth="150"/>
+                            <TableColumn fx:id="feedbackActionsColumn" text="Actions" prefWidth="120"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
         </TabPane>
     </center>
 

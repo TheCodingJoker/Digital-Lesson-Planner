@@ -3,6 +3,7 @@ package controller;
 
 import model.User;
 import util.SessionManager;
+import util.FeedbackDialog;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -16,6 +17,7 @@ import javafx.scene.layout.StackPane;
 public class TeacherDashboardController {
 
     @FXML private Label userNameLabel;
+    @FXML private Button feedbackButton;
     @FXML private Button logoutButton;
 
     @FXML private Button navDashboardButton;
@@ -101,6 +103,12 @@ public class TeacherDashboardController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @FXML
+    private void handleFeedback() {
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        FeedbackDialog.showFeedbackDialog(currentUser);
     }
 
     private void setupActivityMonitoring() {

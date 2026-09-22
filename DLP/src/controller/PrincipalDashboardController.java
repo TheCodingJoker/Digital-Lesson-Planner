@@ -14,6 +14,8 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -125,6 +127,7 @@ public class PrincipalDashboardController {
         loadPrincipalName();
         setupTeacherProgressTable();
         loadDashboardData();
+        setupActivityMonitoring();
     }
 
     // =========================================================
@@ -506,5 +509,16 @@ public class PrincipalDashboardController {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private void setupActivityMonitoring() {
+        userNameLabel.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.addEventFilter(MouseEvent.MOUSE_CLICKED,
+                    e -> SessionManager.getInstance().resetInactivityTimer());
+                newScene.addEventFilter(KeyEvent.KEY_TYPED,
+                    e -> SessionManager.getInstance().resetInactivityTimer());
+            }
+        });
     }
 }

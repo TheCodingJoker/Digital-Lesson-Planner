@@ -3,12 +3,15 @@ package controller;
 import dao.*;
 import model.*;
 import util.SessionManager;
+import util.FeedbackDialog;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -53,10 +56,20 @@ public class AdminDashboardController {
     @FXML private TableColumn<AuditLog, String> auditTargetColumn;
     @FXML private TableColumn<AuditLog, String> auditTimestampColumn;
 
+    // Feedback
+    @FXML private TableView<Feedback> feedbackTable;
+    @FXML private TableColumn<Feedback, String> feedbackTitleColumn;
+    @FXML private TableColumn<Feedback, String> feedbackTypeColumn;
+    @FXML private TableColumn<Feedback, String> feedbackPriorityColumn;
+    @FXML private TableColumn<Feedback, String> feedbackStatusColumn;
+    @FXML private TableColumn<Feedback, String> feedbackDateColumn;
+    @FXML private TableColumn<Feedback, Void> feedbackActionsColumn;
+
     private final UserDAO userDAO = new UserDAO();
     private final CAPSEntryDAO capsDAO = new CAPSEntryDAO();
     private final SchoolEventDAO eventDAO = new SchoolEventDAO();
     private final AuditLogDAO auditLogDAO = new AuditLogDAO();
+    private final FeedbackDAO feedbackDAO = new FeedbackDAO();
     
     private User currentUser;
 
@@ -64,13 +77,15 @@ public class AdminDashboardController {
     public void initialize() {
         currentUser = SessionManager.getInstance().getCurrentUser();
         userNameLabel.setText(currentUser != null ? currentUser.getUsername() : "Admin");
-        
+
         setupUserTable();
         setupCAPSTable();
         setupEventsTable();
         setupAuditLogTable();
-        
+        setupFeedbackTable();
+
         loadAllData();
+        setupActivityMonitoring();
     }
 
     private void setupUserTable() {
@@ -179,11 +194,44 @@ public class AdminDashboardController {
         auditTimestampColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
     }
 
+    private void setupFeedbackTable() {
+        feedbackTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
+        feedbackTypeColumn.setCellValueFactory(new PropertyValueFactory<>("feedbackType"));
+        feedbackPriorityColumn.setCellValueFactory(new PropertyValueFactory<>("priority"));
+        feedbackStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        feedbackDateColumn.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
+
+        feedbackActionsColumn.setCellFactory(param -> new TableCell<>() {
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    Feedback feedback = getTableView().getItems().get(getIndex());
+                    HBox actions = new HBox(4);
+
+                    Button viewButton = new Button("View");
+                    viewButton.setOnAction(e -> viewFeedbackDetails(feedback));
+                    viewButton.getStyleClass().add("table-action-button");
+
+                    Button resolveButton = new Button("Resolve");
+                    resolveButton.setOnAction(e -> resolveFeedback(feedback));
+                    resolveButton.getStyleClass().add("table-action-button");
+
+                    actions.getChildren().addAll(viewButton, resolveButton);
+                    setGraphic(actions);
+                }
+            }
+        });
+    }
+
     private void loadAllData() {
         loadUsers();
         loadCAPSEntries();
         loadSchoolEvents();
         loadAuditLogs();
+        loadFeedback();
     }
 
     private void loadUsers() {
@@ -204,6 +252,11 @@ public class AdminDashboardController {
     private void loadAuditLogs() {
         List<AuditLog> logs = auditLogDAO.getAllAuditLogs();
         auditLogTable.getItems().setAll(logs);
+    }
+
+    private void loadFeedback() {
+        List<Feedback> feedbackList = feedbackDAO.getAllFeedback();
+        feedbackTable.getItems().setAll(feedbackList);
     }
 
     @FXML
@@ -514,6 +567,67 @@ public class AdminDashboardController {
         }
     }
 
+    @FXML
+    private void handleFeedback() {
+        FeedbackDialog.showFeedbackDialog(currentUser);
+    }
+
+    private void viewFeedbackDetails(Feedback feedback) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Feedback Details");
+        alert.setHeaderText(feedback.getTitle());
+
+        StringBuilder content = new StringBuilder();
+        content.append("Type: ").append(feedback.getFeedbackType()).append("\n");
+        content.append("Priority: ").append(feedback.getPriority()).append("\n");
+        content.append("Status: ").append(feedback.getStatus()).append("\n");
+        content.append("Submitted: ").append(feedback.getCreatedAt()).append("\n\n");
+        content.append("Description:\n").append(feedback.getDescription()).append("\n");
+
+        if (feedback.getAdminNotes() != null && !feedback.getAdminNotes().isEmpty()) {
+            content.append("\nAdmin Notes:\n").append(feedback.getAdminNotes());
+        }
+
+        alert.setContentText(content.toString());
+        alert.showAndWait();
+    }
+
+    private void resolveFeedback(Feedback feedback) {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Resolve Feedback");
+        dialog.setHeaderText("Add resolution notes for: " + feedback.getTitle());
+
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        TextArea notesArea = new TextArea();
+        notesArea.setPromptText("Enter resolution notes...");
+        notesArea.setPrefRowCount(5);
+
+        VBox vbox = new VBox(notesArea);
+        dialog.getDialogPane().setContent(vbox);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                return notesArea.getText();
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(notes -> {
+            feedback.setStatus("RESOLVED");
+            feedback.setAdminNotes(notes);
+            feedback.setUpdatedAt(java.time.LocalDateTime.now().format(
+                java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            if (feedbackDAO.updateFeedback(feedback)) {
+                showSuccessMessage("Feedback marked as resolved");
+                loadFeedback();
+            } else {
+                showErrorMessage("Failed to update feedback");
+            }
+        });
+    }
+
     private void logAuditAction(String action, String target) {
         if (currentUser != null) {
             AuditLog log = new AuditLog();
@@ -524,5 +638,32 @@ public class AdminDashboardController {
             auditLogDAO.createAuditLog(log);
             loadAuditLogs();
         }
+    }
+
+    private void setupActivityMonitoring() {
+        userNameLabel.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.addEventFilter(MouseEvent.MOUSE_CLICKED,
+                    e -> SessionManager.getInstance().resetInactivityTimer());
+                newScene.addEventFilter(KeyEvent.KEY_TYPED,
+                    e -> SessionManager.getInstance().resetInactivityTimer());
+            }
+        });
+    }
+
+    private void showSuccessMessage(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Success");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showErrorMessage(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

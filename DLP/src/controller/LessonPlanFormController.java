@@ -4,13 +4,18 @@ package controller;
 import model.LessonPlan;
 import model.CAPSEntry;
 import dao.CAPSEntryDAO;
+import dao.LessonPlanDAO;
+import service.SchedulingEngine;
 import util.ErrorLogger;
+import util.SessionManager;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.control.TextField;
 
 import java.time.LocalDate;
@@ -36,12 +41,16 @@ public class LessonPlanFormController {
     
     private CAPSEntryDAO capsEntryDAO;
     private ErrorLogger errorLogger;
+    private SchedulingEngine schedulingEngine;
+    private LessonPlanDAO lessonPlanDAO;
     private boolean autoPopulateEnabled = true;
 
     @FXML
     public void initialize() {
         capsEntryDAO = new CAPSEntryDAO();
         errorLogger = ErrorLogger.getInstance();
+        lessonPlanDAO = new LessonPlanDAO();
+        schedulingEngine = SchedulingEngine.getInstance();
         
         subjectCombo.setItems(FXCollections.observableArrayList(
             "Mathematics", "English Home Language", "Life Skills",
@@ -58,9 +67,10 @@ public class LessonPlanFormController {
         termCombo.setItems(FXCollections.observableArrayList("Term 1", "Term 2", "Term 3", "Term 4"));
 
         lessonDatePicker.setValue(LocalDate.now());
-        
+
         // Add listeners for CAPS auto-populate
         setupCAPSAutoPopulate();
+        setupActivityMonitoring();
     }
 
     /** Pre-fills the form when editing an existing lesson plan. */
@@ -209,8 +219,20 @@ public class LessonPlanFormController {
                 "Failed to auto-populate CAPS data", e);
         }
     }
-    
+
     public void setAutoPopulateEnabled(boolean enabled) {
         this.autoPopulateEnabled = enabled;
+    }
+
+    private void setupActivityMonitoring() {
+        // Monitor key presses and mouse clicks on form fields
+        gradeCombo.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.addEventFilter(MouseEvent.MOUSE_CLICKED,
+                    e -> SessionManager.getInstance().resetInactivityTimer());
+                newScene.addEventFilter(KeyEvent.KEY_TYPED,
+                    e -> SessionManager.getInstance().resetInactivityTimer());
+            }
+        });
     }
 }

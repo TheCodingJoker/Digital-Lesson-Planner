@@ -6,6 +6,7 @@ public class SchoolEvent {
     private String eventDate;
     private String eventType; // FULL_DAY or HALF_DAY
     private String description;
+    private int academicYear;
     private String createdAt;
 
     public SchoolEvent() {}
@@ -24,6 +25,9 @@ public class SchoolEvent {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public int getAcademicYear() { return academicYear; }
+    public void setAcademicYear(int academicYear) { this.academicYear = academicYear; }
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }

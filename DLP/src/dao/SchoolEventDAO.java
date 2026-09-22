@@ -102,6 +102,18 @@ public class SchoolEventDAO {
         event.setEventType(rs.getString("eventType"));
         event.setDescription(rs.getString("description"));
         event.setCreatedAt(rs.getString("createdAt"));
+        
+        // Try to get academicYear if it exists (for backwards compatibility)
+        try {
+            event.setAcademicYear(rs.getInt("academicYear"));
+        } catch (SQLException e) {
+            event.setAcademicYear(2026); // Default to current year
+        }
+        
         return event;
+    }
+    
+    public SchoolEvent getSchoolEventById(String eventId) {
+        return findByEventId(eventId);
     }
 }
