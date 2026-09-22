@@ -1,11 +1,17 @@
 
 package model;
 
-public class LessonPlan {
+import java.io.Serializable;
+
+public class LessonPlan implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
 
     public static final String STATUS_SCHEDULED = "SCHEDULED";
     public static final String STATUS_COMPLETED = "COMPLETED";
     public static final String STATUS_EXTENDED = "EXTENDED";
+    public static final String STATUS_INCOMPLETE = "INCOMPLETE";
+    public static final String STATUS_RESCHEDULED = "RESCHEDULED";
 
     private String lessonPlanId;
     private String teacherId;
@@ -23,6 +29,7 @@ public class LessonPlan {
     private String status;
     private String createdAt;
     private String updatedAt;
+    private String snapshotId; // Foreign key to CAPSSnapshot
 
     public LessonPlan() {}
 
@@ -73,4 +80,7 @@ public class LessonPlan {
 
     public String getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getSnapshotId() { return snapshotId; }
+    public void setSnapshotId(String snapshotId) { this.snapshotId = snapshotId; }
 }

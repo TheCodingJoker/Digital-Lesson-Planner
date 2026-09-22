@@ -77,6 +77,7 @@ public class MainApp extends Application {
                 // Defensive migration for teachers already running an earlier build of this app
                 addColumnIfMissing(stmt, "LessonPlan", "durationMinutes", "INTEGER DEFAULT 60");
                 addColumnIfMissing(stmt, "LessonPlan", "teachingActivities", "TEXT");
+                addColumnIfMissing(stmt, "LessonPlan", "snapshotId", "TEXT");
 
                 stmt.execute("CREATE TABLE IF NOT EXISTS SchoolClass (" +
                     "classId TEXT PRIMARY KEY, " +
@@ -88,6 +89,60 @@ public class MainApp extends Application {
                     "notes TEXT, " +
                     "createdAt TEXT DEFAULT (datetime('now','localtime')), " +
                     "FOREIGN KEY (teacherId) REFERENCES User(userId))");
+
+                // CAPS Database Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS CAPSEntry (" +
+                    "capsCode TEXT PRIMARY KEY, " +
+                    "subject TEXT NOT NULL, " +
+                    "gradeLevel TEXT NOT NULL, " +
+                    "term INTEGER NOT NULL, " +
+                    "topic TEXT NOT NULL, " +
+                    "outcomes TEXT NOT NULL, " +
+                    "assessmentStandards TEXT, " +
+                    "createdAt TEXT DEFAULT (datetime('now','localtime')))");
+
+                // School Events Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS SchoolEvent (" +
+                    "eventId TEXT PRIMARY KEY, " +
+                    "eventName TEXT NOT NULL, " +
+                    "eventDate TEXT NOT NULL, " +
+                    "eventType TEXT NOT NULL, " + // FULL_DAY or HALF_DAY
+                    "description TEXT, " +
+                    "academicYear INTEGER DEFAULT 2026, " +
+                    "createdAt TEXT DEFAULT (datetime('now','localtime')))");
+                
+                // Add academicYear column if it doesn't exist (backwards compatibility)
+                addColumnIfMissing(stmt, "SchoolEvent", "academicYear", "INTEGER DEFAULT 2026");
+
+                // Audit Log Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS AuditLog (" +
+                    "entryId TEXT PRIMARY KEY, " +
+                    "userId TEXT NOT NULL, " +
+                    "action TEXT NOT NULL, " +
+                    "target TEXT NOT NULL, " +
+                    "timestamp TEXT DEFAULT (datetime('now','localtime')), " +
+                    "FOREIGN KEY (userId) REFERENCES User(userId))");
+
+                // CAPS Snapshot Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS CAPSSnapshot (" +
+                    "snapshotId TEXT PRIMARY KEY, " +
+                    "capturedAt TEXT NOT NULL, " +
+                    "originalData TEXT NOT NULL, " +
+                    "createdAt TEXT DEFAULT (datetime('now','localtime')))");
+
+                // Feedback Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS Feedback (" +
+                    "feedbackId TEXT PRIMARY KEY, " +
+                    "userId TEXT NOT NULL, " +
+                    "feedbackType TEXT NOT NULL, " +
+                    "title TEXT NOT NULL, " +
+                    "description TEXT NOT NULL, " +
+                    "status TEXT NOT NULL DEFAULT 'OPEN', " +
+                    "priority TEXT NOT NULL DEFAULT 'MEDIUM', " +
+                    "adminNotes TEXT, " +
+                    "createdAt TEXT DEFAULT (datetime('now','localtime')), " +
+                    "updatedAt TEXT DEFAULT (datetime('now','localtime')), " +
+                    "FOREIGN KEY (userId) REFERENCES User(userId))");
             }
             System.out.println("Database initialized successfully.");
         } catch (Exception e) {

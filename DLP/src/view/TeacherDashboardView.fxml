@@ -15,9 +15,9 @@
             stylesheets="@styles/dlp-theme.css">
 
     <top>
-        <HBox styleClass="app-header" alignment="CENTER_LEFT" spacing="14">
+        <HBox styleClass="app-header" alignment="CENTER_LEFT" spacing="12">
             <padding>
-                <Insets top="14" right="28" bottom="14" left="28"/>
+                <Insets top="12" right="24" bottom="12" left="24"/>
             </padding>
 
             <Label text="&#128214;" styleClass="app-header-icon"/>
@@ -32,6 +32,7 @@
                 <Label fx:id="userNameLabel" styleClass="app-header-username"/>
                 <Label text="Teacher" styleClass="app-header-userrole"/>
             </VBox>
+            <Button fx:id="feedbackButton" text="&#128172;" onAction="#handleFeedback" styleClass="icon-button"/>
             <Button fx:id="logoutButton" text="&#10132;" onAction="#handleLogout" styleClass="logout-icon-button"/>
         </HBox>
     </top>

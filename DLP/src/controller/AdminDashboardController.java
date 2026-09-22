@@ -1,1661 +1,669 @@
 package controller;
 
-import javafx.collections.FXCollections;
-import javafx.event.ActionEvent;
+import dao.*;
+import model.*;
+import util.SessionManager;
+import util.FeedbackDialog;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import util.DatabaseConnection;
-import util.SessionManager;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public class AdminDashboardController {
 
-   
-    @FXML
-    private Label welcomeLabel;
-
-   
-    @FXML
-    private Label totalUsersLabel;
-
-    @FXML
-    private Label totalTeachersLabel;
-
-    @FXML
-    private Label totalStudentsLabel;
-
-    @FXML
-    private Label totalLessonPlansLabel;
-
+    @FXML private Label userNameLabel;
+    @FXML private Button logoutButton;
     
-    @FXML
-    private VBox contentBox;
-
+    @FXML private TabPane adminTabPane;
     
-    @FXML
-    private TableView<?> activityTable;
-
-    @FXML
-    private TableColumn<?, ?> activityColumn;
-
-    @FXML
-    private TableColumn<?, ?> userColumn;
-
-    @FXML
-    private TableColumn<?, ?> dateColumn;
-
+    // User Management
+    @FXML private TableView<User> usersTable;
+    @FXML private TableColumn<User, String> usernameColumn;
+    @FXML private TableColumn<User, String> emailColumn;
+    @FXML private TableColumn<User, String> roleColumn;
+    @FXML private TableColumn<User, String> statusColumn;
+    @FXML private TableColumn<User, Void> actionsColumn;
     
+    // CAPS Database
+    @FXML private TableView<CAPSEntry> capsTable;
+    @FXML private TableColumn<CAPSEntry, String> capsCodeColumn;
+    @FXML private TableColumn<CAPSEntry, String> capsSubjectColumn;
+    @FXML private TableColumn<CAPSEntry, String> capsGradeColumn;
+    @FXML private TableColumn<CAPSEntry, String> capsTermColumn;
+    @FXML private TableColumn<CAPSEntry, String> capsTopicColumn;
+    @FXML private TableColumn<CAPSEntry, Void> capsActionsColumn;
+    
+    // School Events
+    @FXML private TableView<SchoolEvent> eventsTable;
+    @FXML private TableColumn<SchoolEvent, String> eventNameColumn;
+    @FXML private TableColumn<SchoolEvent, String> eventDateColumn;
+    @FXML private TableColumn<SchoolEvent, String> eventTypeColumn;
+    @FXML private TableColumn<SchoolEvent, Void> eventActionsColumn;
+    
+    // Audit Log
+    @FXML private TableView<AuditLog> auditLogTable;
+    @FXML private TableColumn<AuditLog, String> auditActionColumn;
+    @FXML private TableColumn<AuditLog, String> auditTargetColumn;
+    @FXML private TableColumn<AuditLog, String> auditTimestampColumn;
+
+    // Feedback
+    @FXML private TableView<Feedback> feedbackTable;
+    @FXML private TableColumn<Feedback, String> feedbackTitleColumn;
+    @FXML private TableColumn<Feedback, String> feedbackTypeColumn;
+    @FXML private TableColumn<Feedback, String> feedbackPriorityColumn;
+    @FXML private TableColumn<Feedback, String> feedbackStatusColumn;
+    @FXML private TableColumn<Feedback, String> feedbackDateColumn;
+    @FXML private TableColumn<Feedback, Void> feedbackActionsColumn;
+
+    private final UserDAO userDAO = new UserDAO();
+    private final CAPSEntryDAO capsDAO = new CAPSEntryDAO();
+    private final SchoolEventDAO eventDAO = new SchoolEventDAO();
+    private final AuditLogDAO auditLogDAO = new AuditLogDAO();
+    private final FeedbackDAO feedbackDAO = new FeedbackDAO();
+    
+    private User currentUser;
+
     @FXML
     public void initialize() {
+        currentUser = SessionManager.getInstance().getCurrentUser();
+        userNameLabel.setText(currentUser != null ? currentUser.getUsername() : "Admin");
 
-        System.out.println("Admin Dashboard initializing...");
+        setupUserTable();
+        setupCAPSTable();
+        setupEventsTable();
+        setupAuditLogTable();
+        setupFeedbackTable();
 
-        initializeDatabase();
-
-        loadAdministratorName();
-
-        loadDashboardStatistics();
-
-        // Load School Calendar as the default tab
-        showSchoolCalendar(null);
-
-        System.out.println("Admin Dashboard loaded successfully.");
+        loadAllData();
+        setupActivityMonitoring();
     }
 
-  
-    private void loadAdministratorName() {
+    private void setupUserTable() {
+        usernameColumn.setCellValueFactory(new PropertyValueFactory<>("username"));
+        emailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));
+        roleColumn.setCellValueFactory(new PropertyValueFactory<>("role"));
+        statusColumn.setCellValueFactory(cellData -> {
+            User user = cellData.getValue();
+            String status = user.isActive() ? "Active" : "Inactive";
+            return new javafx.beans.property.SimpleStringProperty(status);
+        });
+        
+        actionsColumn.setCellFactory(param -> new TableCell<>() {
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    User user = getTableView().getItems().get(getIndex());
+                    HBox actions = new HBox(4);
+                    
+                    Button editButton = new Button("✏");
+                    editButton.getStyleClass().add("table-action-button");
+                    editButton.setOnAction(e -> handleEditUser(user));
+                    
+                    Button deleteButton = new Button("🗑");
+                    deleteButton.getStyleClass().add("table-action-button-danger");
+                    deleteButton.setOnAction(e -> handleDeleteUser(user));
+                    
+                    actions.getChildren().addAll(editButton, deleteButton);
+                    setGraphic(actions);
+                }
+            }
+        });
+    }
 
-        try {
+    private void setupCAPSTable() {
+        capsCodeColumn.setCellValueFactory(new PropertyValueFactory<>("capsCode"));
+        capsSubjectColumn.setCellValueFactory(new PropertyValueFactory<>("subject"));
+        capsGradeColumn.setCellValueFactory(new PropertyValueFactory<>("gradeLevel"));
+        capsTermColumn.setCellValueFactory(cellData -> {
+            CAPSEntry entry = cellData.getValue();
+            return new javafx.beans.property.SimpleStringProperty(String.valueOf(entry.getTerm()));
+        });
+        capsTopicColumn.setCellValueFactory(new PropertyValueFactory<>("topic"));
+        
+        capsActionsColumn.setCellFactory(param -> new TableCell<>() {
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    CAPSEntry entry = getTableView().getItems().get(getIndex());
+                    HBox actions = new HBox(4);
+                    
+                    Button editButton = new Button("✏");
+                    editButton.getStyleClass().add("table-action-button");
+                    editButton.setOnAction(e -> handleEditCAPSEntry(entry));
+                    
+                    Button deleteButton = new Button("🗑");
+                    deleteButton.getStyleClass().add("table-action-button-danger");
+                    deleteButton.setOnAction(e -> handleDeleteCAPSEntry(entry));
+                    
+                    actions.getChildren().addAll(editButton, deleteButton);
+                    setGraphic(actions);
+                }
+            }
+        });
+    }
 
-            if (SessionManager.getInstance().getCurrentUser() != null) {
+    private void setupEventsTable() {
+        eventNameColumn.setCellValueFactory(new PropertyValueFactory<>("eventName"));
+        eventDateColumn.setCellValueFactory(new PropertyValueFactory<>("eventDate"));
+        eventTypeColumn.setCellValueFactory(new PropertyValueFactory<>("eventType"));
+        
+        eventActionsColumn.setCellFactory(param -> new TableCell<>() {
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    SchoolEvent event = getTableView().getItems().get(getIndex());
+                    HBox actions = new HBox(4);
+                    
+                    Button editButton = new Button("✏");
+                    editButton.getStyleClass().add("table-action-button");
+                    editButton.setOnAction(e -> handleEditEvent(event));
+                    
+                    Button deleteButton = new Button("🗑");
+                    deleteButton.getStyleClass().add("table-action-button-danger");
+                    deleteButton.setOnAction(e -> handleDeleteEvent(event));
+                    
+                    actions.getChildren().addAll(editButton, deleteButton);
+                    setGraphic(actions);
+                }
+            }
+        });
+    }
 
-                String username =
-                        SessionManager.getInstance()
-                                .getCurrentUser()
-                                .getUsername();
+    private void setupAuditLogTable() {
+        auditActionColumn.setCellValueFactory(new PropertyValueFactory<>("action"));
+        auditTargetColumn.setCellValueFactory(new PropertyValueFactory<>("target"));
+        auditTimestampColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
+    }
 
-                welcomeLabel.setText(
-                        "Welcome, " + username
-                );
+    private void setupFeedbackTable() {
+        feedbackTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
+        feedbackTypeColumn.setCellValueFactory(new PropertyValueFactory<>("feedbackType"));
+        feedbackPriorityColumn.setCellValueFactory(new PropertyValueFactory<>("priority"));
+        feedbackStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        feedbackDateColumn.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
 
+        feedbackActionsColumn.setCellFactory(param -> new TableCell<>() {
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    Feedback feedback = getTableView().getItems().get(getIndex());
+                    HBox actions = new HBox(4);
+
+                    Button viewButton = new Button("View");
+                    viewButton.setOnAction(e -> viewFeedbackDetails(feedback));
+                    viewButton.getStyleClass().add("table-action-button");
+
+                    Button resolveButton = new Button("Resolve");
+                    resolveButton.setOnAction(e -> resolveFeedback(feedback));
+                    resolveButton.getStyleClass().add("table-action-button");
+
+                    actions.getChildren().addAll(viewButton, resolveButton);
+                    setGraphic(actions);
+                }
+            }
+        });
+    }
+
+    private void loadAllData() {
+        loadUsers();
+        loadCAPSEntries();
+        loadSchoolEvents();
+        loadAuditLogs();
+        loadFeedback();
+    }
+
+    private void loadUsers() {
+        List<User> users = userDAO.getAllUsers();
+        usersTable.getItems().setAll(users);
+    }
+
+    private void loadCAPSEntries() {
+        List<CAPSEntry> entries = capsDAO.getAllCAPSEntries();
+        capsTable.getItems().setAll(entries);
+    }
+
+    private void loadSchoolEvents() {
+        List<SchoolEvent> events = eventDAO.getAllSchoolEvents();
+        eventsTable.getItems().setAll(events);
+    }
+
+    private void loadAuditLogs() {
+        List<AuditLog> logs = auditLogDAO.getAllAuditLogs();
+        auditLogTable.getItems().setAll(logs);
+    }
+
+    private void loadFeedback() {
+        List<Feedback> feedbackList = feedbackDAO.getAllFeedback();
+        feedbackTable.getItems().setAll(feedbackList);
+    }
+
+    @FXML
+    private void handleAddUser() {
+        showUserDialog(null);
+    }
+
+    @FXML
+    private void handleEditUser(User user) {
+        showUserDialog(user);
+    }
+
+    @FXML
+    private void handleDeleteUser(User user) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Delete User");
+        confirm.setHeaderText("Delete user: " + user.getUsername() + "?");
+        confirm.setContentText("This action cannot be undone.");
+        
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            boolean success = userDAO.deleteUser(user.getUserId());
+            if (success) {
+                logAuditAction("Deleted user account", user.getUsername());
+                loadUsers();
+            }
+        }
+    }
+
+    private void showUserDialog(User user) {
+        // Simple implementation using alert for now
+        Alert dialog = new Alert(Alert.AlertType.CONFIRMATION);
+        dialog.setTitle(user == null ? "Add User" : "Edit User");
+        dialog.setHeaderText(user == null ? "Create new user account" : "Edit user account");
+        
+        // Create form content
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Username");
+        TextField emailField = new TextField();
+        emailField.setPromptText("Email");
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Password");
+        ComboBox<String> roleCombo = new ComboBox<>();
+        roleCombo.getItems().addAll("TEACHER", "PRINCIPAL_HOD", "ADMINISTRATOR");
+        roleCombo.setValue("TEACHER");
+        
+        if (user != null) {
+            usernameField.setText(user.getUsername());
+            usernameField.setDisable(true);
+            emailField.setText(user.getEmail());
+            roleCombo.setValue(user.getRole());
+        }
+        
+        VBox content = new VBox(12);
+        content.getChildren().addAll(
+            new Label("Username:"), usernameField,
+            new Label("Email:"), emailField,
+            new Label("Password:"), passwordField,
+            new Label("Role:"), roleCombo
+        );
+        
+        dialog.getDialogPane().setContent(content);
+        
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            if (user == null) {
+                // Create new user
+                User newUser = new User();
+                newUser.setUserId(UUID.randomUUID().toString());
+                newUser.setUsername(usernameField.getText());
+                newUser.setEmail(emailField.getText());
+                newUser.setPasswordHash(util.PasswordHasher.hashPassword(passwordField.getText()));
+                newUser.setRole(roleCombo.getValue());
+                newUser.setActive(true);
+                
+                boolean success = userDAO.createUser(newUser);
+                if (success) {
+                    logAuditAction("Created user account", usernameField.getText());
+                    loadUsers();
+                }
             } else {
-
-                welcomeLabel.setText(
-                        "Welcome, Administrator"
-                );
-            }
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            if (welcomeLabel != null) {
-                welcomeLabel.setText(
-                        "Welcome, Administrator"
-                );
+                // Update existing user
+                user.setEmail(emailField.getText());
+                user.setRole(roleCombo.getValue());
+                if (!passwordField.getText().isEmpty()) {
+                    user.setPasswordHash(util.PasswordHasher.hashPassword(passwordField.getText()));
+                }
+                
+                boolean success = userDAO.updateUser(user);
+                if (success) {
+                    logAuditAction("Updated user account", usernameField.getText());
+                    loadUsers();
+                }
             }
         }
     }
 
-   
-    private void initializeDatabase() {
+    @FXML
+    private void handleAddCAPSEntry() {
+        showCAPSEntryDialog(null);
+    }
 
-        try {
+    @FXML
+    private void handleEditCAPSEntry(CAPSEntry entry) {
+        showCAPSEntryDialog(entry);
+    }
 
-            Connection conn =
-                    DatabaseConnection.getConnection();
-
-            try (Statement stmt = conn.createStatement()) {
-
-                
-                stmt.execute(
-                        "CREATE TABLE IF NOT EXISTS User (" +
-                                "userId TEXT PRIMARY KEY, " +
-                                "username TEXT UNIQUE NOT NULL, " +
-                                "passwordHash TEXT NOT NULL, " +
-                                "role TEXT NOT NULL, " +
-                                "email TEXT UNIQUE NOT NULL, " +
-                                "isActive INTEGER DEFAULT 1, " +
-                                "createdAt TEXT DEFAULT " +
-                                "(datetime('now','localtime'))" +
-                                ")"
-                );
-
-               
-                stmt.execute(
-                        "CREATE TABLE IF NOT EXISTS school_events (" +
-                                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                                "eventName TEXT NOT NULL, " +
-                                "eventDate TEXT NOT NULL, " +
-                                "eventType TEXT NOT NULL" +
-                                ")"
-                );
-
-                
-                stmt.execute(
-                        "CREATE TABLE IF NOT EXISTS caps_subjects (" +
-                                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                                "subjectName TEXT NOT NULL, " +
-                                "grade TEXT NOT NULL, " +
-                                "description TEXT" +
-                                ")"
-                );
-
-                
-                stmt.execute(
-                        "CREATE TABLE IF NOT EXISTS audit_log (" +
-                                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                                "action TEXT NOT NULL, " +
-                                "username TEXT NOT NULL, " +
-                                "actionDate TEXT DEFAULT " +
-                                "(datetime('now','localtime'))" +
-                                ")"
-                );
+    @FXML
+    private void handleDeleteCAPSEntry(CAPSEntry entry) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Delete CAPS Entry");
+        confirm.setHeaderText("Delete CAPS entry: " + entry.getCapsCode() + "?");
+        confirm.setContentText("This action cannot be undone.");
+        
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            boolean success = capsDAO.deleteCAPSEntry(entry.getCapsCode());
+            if (success) {
+                logAuditAction("Deleted CAPS entry", entry.getCapsCode());
+                loadCAPSEntries();
             }
-
-            System.out.println(
-                    "Administration database tables ready."
-            );
-
-        } catch (Exception e) {
-
-            System.err.println(
-                    "Database initialization failed: "
-                            + e.getMessage()
-            );
-
-            e.printStackTrace();
         }
     }
 
-    
-    private void loadDashboardStatistics() {
-
-        try {
-
-            Connection conn =
-                    DatabaseConnection.getConnection();
-
-           
-            int totalUsers = getCount(
-                    conn,
-                    "SELECT COUNT(*) FROM User"
-            );
-
+    private void showCAPSEntryDialog(CAPSEntry entry) {
+        // Simple implementation using alert for now
+        Alert dialog = new Alert(Alert.AlertType.CONFIRMATION);
+        dialog.setTitle(entry == null ? "Add CAPS Entry" : "Edit CAPS Entry");
+        dialog.setHeaderText(entry == null ? "Add new CAPS curriculum entry" : "Edit CAPS curriculum entry");
+        
+        // Create form content
+        TextField capsCodeField = new TextField();
+        capsCodeField.setPromptText("CAPS Code (e.g., CAPS-M10-T1-001)");
+        TextField subjectField = new TextField();
+        subjectField.setPromptText("Subject");
+        TextField gradeField = new TextField();
+        gradeField.setPromptText("Grade Level (e.g., Grade 10)");
+        ComboBox<Integer> termCombo = new ComboBox<>();
+        termCombo.getItems().addAll(1, 2, 3, 4);
+        termCombo.setValue(1);
+        TextField topicField = new TextField();
+        topicField.setPromptText("Topic");
+        TextArea outcomesArea = new TextArea();
+        outcomesArea.setPromptText("Learning Outcomes");
+        outcomesArea.setPrefRowCount(3);
+        TextArea standardsArea = new TextArea();
+        standardsArea.setPromptText("Assessment Standards");
+        standardsArea.setPrefRowCount(2);
+        
+        if (entry != null) {
+            capsCodeField.setText(entry.getCapsCode());
+            capsCodeField.setDisable(true);
+            subjectField.setText(entry.getSubject());
+            gradeField.setText(entry.getGradeLevel());
+            termCombo.setValue(entry.getTerm());
+            topicField.setText(entry.getTopic());
+            outcomesArea.setText(entry.getOutcomes());
+            standardsArea.setText(entry.getAssessmentStandards());
+        }
+        
+        VBox content = new VBox(12);
+        content.getChildren().addAll(
+            new Label("CAPS Code:"), capsCodeField,
+            new Label("Subject:"), subjectField,
+            new Label("Grade Level:"), gradeField,
+            new Label("Term:"), termCombo,
+            new Label("Topic:"), topicField,
+            new Label("Learning Outcomes:"), outcomesArea,
+            new Label("Assessment Standards:"), standardsArea
+        );
+        
+        dialog.getDialogPane().setContent(content);
+        
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            CAPSEntry capsEntry = entry != null ? entry : new CAPSEntry();
+            capsEntry.setCapsCode(capsCodeField.getText());
+            capsEntry.setSubject(subjectField.getText());
+            capsEntry.setGradeLevel(gradeField.getText());
+            capsEntry.setTerm(termCombo.getValue());
+            capsEntry.setTopic(topicField.getText());
+            capsEntry.setOutcomes(outcomesArea.getText());
+            capsEntry.setAssessmentStandards(standardsArea.getText());
             
-            int totalTeachers = getCount(
-                    conn,
-                    "SELECT COUNT(*) FROM User " +
-                            "WHERE LOWER(role) = 'teacher'"
-            );
-
-           
-            int totalStudents = getCount(
-                    conn,
-                    "SELECT COUNT(*) FROM User " +
-                            "WHERE LOWER(role) = 'student'"
-            );
-
+            boolean success;
+            if (entry == null) {
+                success = capsDAO.createCAPSEntry(capsEntry);
+                if (success) {
+                    logAuditAction("Created CAPS entry", capsCodeField.getText());
+                }
+            } else {
+                success = capsDAO.updateCAPSEntry(capsEntry);
+                if (success) {
+                    logAuditAction("Updated CAPS entry", capsCodeField.getText());
+                }
+            }
             
-            int totalLessonPlans = 0;
-
-            try {
-
-                totalLessonPlans = getCount(
-                        conn,
-                        "SELECT COUNT(*) FROM lesson_plans"
-                );
-
-            } catch (Exception ignored) {
-
-                // Table may not exist yet.
-                totalLessonPlans = 0;
+            if (success) {
+                loadCAPSEntries();
             }
+        }
+    }
 
-            totalUsersLabel.setText(
-                    String.valueOf(totalUsers)
-            );
+    @FXML
+    private void handleAddEvent() {
+        showEventDialog(null);
+    }
 
-            totalTeachersLabel.setText(
-                    String.valueOf(totalTeachers)
-            );
+    @FXML
+    private void handleEditEvent(SchoolEvent event) {
+        showEventDialog(event);
+    }
 
-            totalStudentsLabel.setText(
-                    String.valueOf(totalStudents)
-            );
+    @FXML
+    private void handleDeleteEvent(SchoolEvent event) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Delete School Event");
+        confirm.setHeaderText("Delete event: " + event.getEventName() + "?");
+        confirm.setContentText("This action cannot be undone.");
+        
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            boolean success = eventDAO.deleteSchoolEvent(event.getEventId());
+            if (success) {
+                logAuditAction("Deleted school event", event.getEventName());
+                loadSchoolEvents();
+            }
+        }
+    }
 
-            totalLessonPlansLabel.setText(
-                    String.valueOf(totalLessonPlans)
-            );
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            totalUsersLabel.setText("0");
-            totalTeachersLabel.setText("0");
-            totalStudentsLabel.setText("0");
-            totalLessonPlansLabel.setText("0");
+    private void showEventDialog(SchoolEvent event) {
+        // Simple implementation using alert for now
+        Alert dialog = new Alert(Alert.AlertType.CONFIRMATION);
+        dialog.setTitle(event == null ? "Add School Event" : "Edit School Event");
+        dialog.setHeaderText(event == null ? "Add new school event" : "Edit school event");
+        
+        // Create form content
+        TextField eventNameField = new TextField();
+        eventNameField.setPromptText("Event Name");
+        DatePicker eventDatePicker = new DatePicker();
+        ComboBox<String> eventTypeCombo = new ComboBox<>();
+        eventTypeCombo.getItems().addAll("FULL_DAY", "HALF_DAY");
+        eventTypeCombo.setValue("FULL_DAY");
+        TextArea descriptionArea = new TextArea();
+        descriptionArea.setPromptText("Description");
+        descriptionArea.setPrefRowCount(2);
+        
+        if (event != null) {
+            eventNameField.setText(event.getEventName());
+            eventDatePicker.setValue(java.time.LocalDate.parse(event.getEventDate()));
+            eventTypeCombo.setValue(event.getEventType());
+            descriptionArea.setText(event.getDescription());
+        }
+        
+        VBox content = new VBox(12);
+        content.getChildren().addAll(
+            new Label("Event Name:"), eventNameField,
+            new Label("Event Date:"), eventDatePicker,
+            new Label("Event Type:"), eventTypeCombo,
+            new Label("Description:"), descriptionArea
+        );
+        
+        dialog.getDialogPane().setContent(content);
+        
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            SchoolEvent schoolEvent = event != null ? event : new SchoolEvent();
+            schoolEvent.setEventId(event != null ? event.getEventId() : UUID.randomUUID().toString());
+            schoolEvent.setEventName(eventNameField.getText());
+            schoolEvent.setEventDate(eventDatePicker.getValue() != null ? eventDatePicker.getValue().toString() : "");
+            schoolEvent.setEventType(eventTypeCombo.getValue());
+            schoolEvent.setDescription(descriptionArea.getText());
+            
+            boolean success;
+            if (event == null) {
+                success = eventDAO.createSchoolEvent(schoolEvent);
+                if (success) {
+                    logAuditAction("Created school event", eventNameField.getText());
+                }
+            } else {
+                success = eventDAO.updateSchoolEvent(schoolEvent);
+                if (success) {
+                    logAuditAction("Updated school event", eventNameField.getText());
+                }
+            }
+            
+            if (success) {
+                loadSchoolEvents();
+            }
         }
     }
 
-   
-    private int getCount(
-            Connection conn,
-            String sql
-    ) throws Exception {
-
-        try (
-                PreparedStatement ps =
-                        conn.prepareStatement(sql);
-
-                ResultSet rs =
-                        ps.executeQuery()
-        ) {
-
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        }
-
-        return 0;
+    @FXML
+    private void handleExportLog() {
+        System.out.println("Export audit log functionality");
+        // TODO: Implement export to file
     }
 
-    
     @FXML
-    private void showDashboard(ActionEvent event) {
-
-        contentBox.getChildren().clear();
-
-        Label title =
-                new Label("Administration Dashboard");
-
-        title.getStyleClass().add(
-                "section-title"
-        );
-
-        Label description =
-                new Label(
-                        "Overview of the Digital Lesson Planner system."
-                );
-
-        description.getStyleClass().add(
-                "page-subtitle"
-        );
-
-        VBox box =
-                new VBox(
-                        10,
-                        title,
-                        description
-                );
-
-        contentBox.getChildren().add(box);
-
-        loadDashboardStatistics();
-    }
-
-    
-    @FXML
-    private void showUserManagement(
-            ActionEvent event
-    ) {
-
-        contentBox.getChildren().clear();
-
-        Label title =
-                new Label("User Management");
-
-        title.getStyleClass().add(
-                "section-title"
-        );
-
-        Button addUser =
-                new Button("+ Add User");
-
-        addUser.getStyleClass().add(
-                "primary-button"
-        );
-
-        addUser.setOnAction(
-                this::addUser
-        );
-
-        HBox header =
-                new HBox(
-                        20,
-                        title,
-                        addUser
-                );
-
-        contentBox.getChildren().add(header);
-
+    private void handleLogout() {
+        SessionManager.getInstance().endSession();
         try {
-
-            Connection conn =
-                    DatabaseConnection.getConnection();
-
-            PreparedStatement ps =
-                    conn.prepareStatement(
-                            "SELECT username, role, email, isActive " +
-                                    "FROM User ORDER BY username"
-                    );
-
-            ResultSet rs =
-                    ps.executeQuery();
-
-            while (rs.next()) {
-
-                HBox row =
-                        new HBox(25);
-
-                row.getStyleClass().add(
-                        "event-card"
-                );
-
-                Label username =
-                        new Label(
-                                "Username: "
-                                        + rs.getString("username")
-                        );
-
-                Label role =
-                        new Label(
-                                "Role: "
-                                        + rs.getString("role")
-                        );
-
-                Label email =
-                        new Label(
-                                "Email: "
-                                        + rs.getString("email")
-                        );
-
-                String statusText =
-                        rs.getInt("isActive") == 1
-                                ? "Active"
-                                : "Inactive";
-
-                Label status =
-                        new Label(
-                                "Status: "
-                                        + statusText
-                        );
-
-                row.getChildren().addAll(
-                        username,
-                        role,
-                        email,
-                        status
-                );
-
-                contentBox.getChildren().add(row);
-            }
-
-            rs.close();
-            ps.close();
-
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/LoginView.fxml"));
+            Parent loginView = loader.load();
+            logoutButton.getScene().setRoot(loginView);
         } catch (Exception e) {
-
             e.printStackTrace();
-
-            showMessage(
-                    "Database Error",
-                    "Unable to load users."
-            );
         }
     }
 
     @FXML
-    private void showCapsDatabase(
-            ActionEvent event
-    ) {
+    private void handleFeedback() {
+        FeedbackDialog.showFeedbackDialog(currentUser);
+    }
 
-        contentBox.getChildren().clear();
+    private void viewFeedbackDetails(Feedback feedback) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Feedback Details");
+        alert.setHeaderText(feedback.getTitle());
 
-        Label title =
-                new Label("CAPS Database");
+        StringBuilder content = new StringBuilder();
+        content.append("Type: ").append(feedback.getFeedbackType()).append("\n");
+        content.append("Priority: ").append(feedback.getPriority()).append("\n");
+        content.append("Status: ").append(feedback.getStatus()).append("\n");
+        content.append("Submitted: ").append(feedback.getCreatedAt()).append("\n\n");
+        content.append("Description:\n").append(feedback.getDescription()).append("\n");
 
-        title.getStyleClass().add(
-                "section-title"
-        );
+        if (feedback.getAdminNotes() != null && !feedback.getAdminNotes().isEmpty()) {
+            content.append("\nAdmin Notes:\n").append(feedback.getAdminNotes());
+        }
 
-        Button addSubject =
-                new Button("+ Add Subject");
+        alert.setContentText(content.toString());
+        alert.showAndWait();
+    }
 
-        addSubject.getStyleClass().add(
-                "primary-button"
-        );
+    private void resolveFeedback(Feedback feedback) {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Resolve Feedback");
+        dialog.setHeaderText("Add resolution notes for: " + feedback.getTitle());
 
-        addSubject.setOnAction(
-                this::addSubject
-        );
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-        HBox header =
-                new HBox(
-                        20,
-                        title,
-                        addSubject
-                );
+        TextArea notesArea = new TextArea();
+        notesArea.setPromptText("Enter resolution notes...");
+        notesArea.setPrefRowCount(5);
 
-        contentBox.getChildren().add(header);
+        VBox vbox = new VBox(notesArea);
+        dialog.getDialogPane().setContent(vbox);
 
-        try {
-
-            Connection conn =
-                    DatabaseConnection.getConnection();
-
-            PreparedStatement ps =
-                    conn.prepareStatement(
-                            "SELECT subjectName, grade, description " +
-                                    "FROM caps_subjects " +
-                                    "ORDER BY grade, subjectName"
-                    );
-
-            ResultSet rs =
-                    ps.executeQuery();
-
-            boolean found = false;
-
-            while (rs.next()) {
-
-                found = true;
-
-                VBox card =
-                        new VBox(5);
-
-                card.getStyleClass().add(
-                        "event-card"
-                );
-
-                Label subject =
-                        new Label(
-                                rs.getString(
-                                        "subjectName"
-                                )
-                        );
-
-                subject.getStyleClass().add(
-                        "event-title"
-                );
-
-                Label grade =
-                        new Label(
-                                "Grade: "
-                                        + rs.getString("grade")
-                        );
-
-                Label description =
-                        new Label(
-                                rs.getString(
-                                        "description"
-                                ) == null
-                                        ? ""
-                                        : rs.getString(
-                                                "description"
-                                        )
-                        );
-
-                card.getChildren().addAll(
-                        subject,
-                        grade,
-                        description
-                );
-
-                contentBox.getChildren().add(card);
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                return notesArea.getText();
             }
+            return null;
+        });
 
-            if (!found) {
+        dialog.showAndWait().ifPresent(notes -> {
+            feedback.setStatus("RESOLVED");
+            feedback.setAdminNotes(notes);
+            feedback.setUpdatedAt(java.time.LocalDateTime.now().format(
+                java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
-                Label empty =
-                        new Label(
-                                "No CAPS subjects have been added yet."
-                        );
-
-                contentBox.getChildren().add(
-                        empty
-                );
+            if (feedbackDAO.updateFeedback(feedback)) {
+                showSuccessMessage("Feedback marked as resolved");
+                loadFeedback();
+            } else {
+                showErrorMessage("Failed to update feedback");
             }
+        });
+    }
 
-            rs.close();
-            ps.close();
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            showMessage(
-                    "Database Error",
-                    "Unable to load CAPS subjects."
-            );
+    private void logAuditAction(String action, String target) {
+        if (currentUser != null) {
+            AuditLog log = new AuditLog();
+            log.setEntryId(UUID.randomUUID().toString());
+            log.setUserId(currentUser.getUserId());
+            log.setAction(action);
+            log.setTarget(target);
+            auditLogDAO.createAuditLog(log);
+            loadAuditLogs();
         }
     }
 
-    
-    @FXML
-    private void showSchoolCalendar(
-            ActionEvent event
-    ) {
-
-        contentBox.getChildren().clear();
-
-        Label title =
-                new Label("School Events");
-
-        title.getStyleClass().add(
-                "section-title"
-        );
-
-        Button addEvent =
-                new Button("+ Add Event");
-
-        addEvent.getStyleClass().add(
-                "primary-button"
-        );
-
-        addEvent.setOnAction(
-                this::handleAddEvent
-        );
-
-        HBox header =
-                new HBox(
-                        20,
-                        title,
-                        addEvent
-                );
-
-        contentBox.getChildren().add(header);
-
-        try {
-
-            Connection conn =
-                    DatabaseConnection.getConnection();
-
-            PreparedStatement ps =
-                    conn.prepareStatement(
-                            "SELECT id, eventName, eventDate, eventType " +
-                                    "FROM school_events " +
-                                    "ORDER BY eventDate"
-                    );
-
-            ResultSet rs =
-                    ps.executeQuery();
-
-            boolean found = false;
-
-            while (rs.next()) {
-
-                found = true;
-
-                int eventId =
-                        rs.getInt("id");
-
-                HBox row =
-                        new HBox(20);
-
-                row.getStyleClass().add(
-                        "event-card"
-                );
-
-                Label icon =
-                        new Label("▣");
-
-                icon.getStyleClass().add(
-                        "calendar-icon"
-                );
-
-                VBox details =
-                        new VBox(3);
-
-                Label name =
-                        new Label(
-                                rs.getString(
-                                        "eventName"
-                                )
-                        );
-
-                name.getStyleClass().add(
-                        "event-title"
-                );
-
-                Label date =
-                        new Label(
-                                rs.getString(
-                                        "eventDate"
-                                )
-                        );
-
-                date.getStyleClass().add(
-                        "event-date"
-                );
-
-                details.getChildren().addAll(
-                        name,
-                        date
-                );
-
-                Region spacer =
-                        new Region();
-
-                HBox.setHgrow(
-                        spacer,
-                        javafx.scene.layout.Priority.ALWAYS
-                );
-
-                Label type =
-                        new Label(
-                                rs.getString(
-                                        "eventType"
-                                )
-                        );
-
-                Button edit =
-                        new Button("✎");
-
-                edit.getStyleClass().add(
-                        "edit-button"
-                );
-
-                edit.setOnAction(
-                        e ->
-                                handleEditEvent(
-                                        e,
-                                        eventId
-                                )
-                );
-
-                Button delete =
-                        new Button("▢");
-
-                delete.getStyleClass().add(
-                        "delete-button"
-                );
-
-                delete.setOnAction(
-                        e ->
-                                handleDeleteEvent(
-                                        e,
-                                        eventId
-                                )
-                );
-
-                row.getChildren().addAll(
-                        icon,
-                        details,
-                        spacer,
-                        type,
-                        edit,
-                        delete
-                );
-
-                contentBox.getChildren().add(
-                        row
-                );
+    private void setupActivityMonitoring() {
+        userNameLabel.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.addEventFilter(MouseEvent.MOUSE_CLICKED,
+                    e -> SessionManager.getInstance().resetInactivityTimer());
+                newScene.addEventFilter(KeyEvent.KEY_TYPED,
+                    e -> SessionManager.getInstance().resetInactivityTimer());
             }
-
-            if (!found) {
-
-                Label empty =
-                        new Label(
-                                "No school events have been added yet."
-                        );
-
-                contentBox.getChildren().add(
-                        empty
-                );
-            }
-
-            rs.close();
-            ps.close();
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            showMessage(
-                    "Database Error",
-                    "Unable to load school events."
-            );
-        }
+        });
     }
 
-    
-    @FXML
-    private void showAuditLog(
-            ActionEvent event
-    ) {
-
-        contentBox.getChildren().clear();
-
-        Label title =
-                new Label("Audit Log");
-
-        title.getStyleClass().add(
-                "section-title"
-        );
-
-        contentBox.getChildren().add(
-                title
-        );
-
-        try {
-
-            Connection conn =
-                    DatabaseConnection.getConnection();
-
-            PreparedStatement ps =
-                    conn.prepareStatement(
-                            "SELECT action, username, actionDate " +
-                                    "FROM audit_log " +
-                                    "ORDER BY id DESC"
-                    );
-
-            ResultSet rs =
-                    ps.executeQuery();
-
-            boolean found = false;
-
-            while (rs.next()) {
-
-                found = true;
-
-                HBox row =
-                        new HBox(20);
-
-                row.getStyleClass().add(
-                        "event-card"
-                );
-
-                Label action =
-                        new Label(
-                                rs.getString("action")
-                        );
-
-                Label username =
-                        new Label(
-                                rs.getString("username")
-                        );
-
-                Label date =
-                        new Label(
-                                rs.getString("actionDate")
-                        );
-
-                row.getChildren().addAll(
-                        action,
-                        username,
-                        date
-                );
-
-                contentBox.getChildren().add(
-                        row
-                );
-            }
-
-            if (!found) {
-
-                Label empty =
-                        new Label(
-                                "No audit records available."
-                        );
-
-                contentBox.getChildren().add(
-                        empty
-                );
-            }
-
-            rs.close();
-            ps.close();
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            showMessage(
-                    "Database Error",
-                    "Unable to load audit log."
-            );
-        }
+    private void showSuccessMessage(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Success");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
-   
-    @FXML
-    private void addUser(ActionEvent event) {
-
-        Dialog<ButtonType> dialog =
-                new Dialog<>();
-
-        dialog.setTitle(
-                "Add User"
-        );
-
-        dialog.setHeaderText(
-                "Create a new user"
-        );
-
-        VBox box =
-                new VBox(10);
-
-        TextField username =
-                new TextField();
-
-        username.setPromptText(
-                "Username"
-        );
-
-        TextField email =
-                new TextField();
-
-        email.setPromptText(
-                "Email"
-        );
-
-        PasswordField password =
-                new PasswordField();
-
-        password.setPromptText(
-                "Password"
-        );
-
-        ComboBox<String> role =
-                new ComboBox<>(
-                        FXCollections.observableArrayList(
-                                "Administrator",
-                                "Teacher",
-                                "Student"
-                        )
-                );
-
-        role.setValue("Teacher");
-
-        box.getChildren().addAll(
-                username,
-                email,
-                password,
-                role
-        );
-
-        dialog.getDialogPane().setContent(
-                box
-        );
-
-        dialog.getDialogPane()
-                .getButtonTypes()
-                .addAll(
-                        ButtonType.OK,
-                        ButtonType.CANCEL
-                );
-
-        dialog.setResultConverter(
-                button -> button
-        );
-
-        dialog.showAndWait()
-                .ifPresent(result -> {
-
-                    if (result == ButtonType.OK) {
-
-                        createUser(
-                                username.getText(),
-                                email.getText(),
-                                password.getText(),
-                                role.getValue()
-                        );
-                    }
-                });
-    }
-
-    private void createUser(
-            String username,
-            String email,
-            String password,
-            String role
-    ) {
-
-        if (
-                username.trim().isEmpty()
-                        || email.trim().isEmpty()
-                        || password.isEmpty()
-        ) {
-
-            showMessage(
-                    "Invalid Input",
-                    "Please complete all fields."
-            );
-
-            return;
-        }
-
-        try {
-
-            Connection conn =
-                    DatabaseConnection.getConnection();
-
-            String userId =
-                    java.util.UUID.randomUUID()
-                            .toString();
-
-            PreparedStatement ps =
-                    conn.prepareStatement(
-                            "INSERT INTO User " +
-                                    "(userId, username, passwordHash, role, email) " +
-                                    "VALUES (?, ?, ?, ?, ?)"
-                    );
-
-            ps.setString(
-                    1,
-                    userId
-            );
-
-            ps.setString(
-                    2,
-                    username
-            );
-
-            // Temporary password storage.
-            // Replace with BCrypt if your project already
-            // uses BCrypt for authentication.
-            ps.setString(
-                    3,
-                    password
-            );
-
-            ps.setString(
-                    4,
-                    role
-            );
-
-            ps.setString(
-                    5,
-                    email
-            );
-
-            ps.executeUpdate();
-
-            ps.close();
-
-            recordAudit(
-                    "Created user: " + username
-            );
-
-            showMessage(
-                    "Success",
-                    "User created successfully."
-            );
-
-            loadDashboardStatistics();
-
-            showUserManagement(null);
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            showMessage(
-                    "Error",
-                    "Unable to create user.\n"
-                            + e.getMessage()
-            );
-        }
-    }
-
-    @FXML
-    private void addTeacher(ActionEvent event) {
-
-        addUser(null);
-    }
-
-    @FXML
-    private void addSubject(ActionEvent event) {
-
-        Dialog<ButtonType> dialog =
-                new Dialog<>();
-
-        dialog.setTitle(
-                "Add CAPS Subject"
-        );
-
-        dialog.setHeaderText(
-                "Add a CAPS subject"
-        );
-
-        VBox box =
-                new VBox(10);
-
-        TextField subject =
-                new TextField();
-
-        subject.setPromptText(
-                "Subject name"
-        );
-
-        TextField grade =
-                new TextField();
-
-        grade.setPromptText(
-                "Grade"
-        );
-
-        TextArea description =
-                new TextArea();
-
-        description.setPromptText(
-                "Description"
-        );
-
-        box.getChildren().addAll(
-                subject,
-                grade,
-                description
-        );
-
-        dialog.getDialogPane().setContent(
-                box
-        );
-
-        dialog.getDialogPane()
-                .getButtonTypes()
-                .addAll(
-                        ButtonType.OK,
-                        ButtonType.CANCEL
-                );
-
-        dialog.showAndWait()
-                .ifPresent(result -> {
-
-                    if (result == ButtonType.OK) {
-
-                        saveSubject(
-                                subject.getText(),
-                                grade.getText(),
-                                description.getText()
-                        );
-                    }
-                });
-    }
-
-    
-    private void saveSubject(
-            String subject,
-            String grade,
-            String description
-    ) {
-
-        if (
-                subject.trim().isEmpty()
-                        || grade.trim().isEmpty()
-        ) {
-
-            showMessage(
-                    "Invalid Input",
-                    "Subject and grade are required."
-            );
-
-            return;
-        }
-
-        try {
-
-            Connection conn =
-                    DatabaseConnection.getConnection();
-
-            PreparedStatement ps =
-                    conn.prepareStatement(
-                            "INSERT INTO caps_subjects " +
-                                    "(subjectName, grade, description) " +
-                                    "VALUES (?, ?, ?)"
-                    );
-
-            ps.setString(
-                    1,
-                    subject
-            );
-
-            ps.setString(
-                    2,
-                    grade
-            );
-
-            ps.setString(
-                    3,
-                    description
-            );
-
-            ps.executeUpdate();
-
-            ps.close();
-
-            recordAudit(
-                    "Added CAPS subject: "
-                            + subject
-            );
-
-            showMessage(
-                    "Success",
-                    "Subject added successfully."
-            );
-
-            showCapsDatabase(null);
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            showMessage(
-                    "Error",
-                    "Unable to add subject."
-            );
-        }
-    }
-
-    
-    @FXML
-    private void handleAddEvent(
-            ActionEvent event
-    ) {
-
-        Dialog<ButtonType> dialog =
-                new Dialog<>();
-
-        dialog.setTitle(
-                "Add School Event"
-        );
-
-        dialog.setHeaderText(
-                "Create a new school event"
-        );
-
-        VBox box =
-                new VBox(10);
-
-        TextField eventName =
-                new TextField();
-
-        eventName.setPromptText(
-                "Event name"
-        );
-
-        DatePicker eventDate =
-                new DatePicker();
-
-        ComboBox<String> eventType =
-                new ComboBox<>(
-                        FXCollections.observableArrayList(
-                                "Full Day",
-                                "Half Day"
-                        )
-                );
-
-        eventType.setValue(
-                "Full Day"
-        );
-
-        box.getChildren().addAll(
-                eventName,
-                eventDate,
-                eventType
-        );
-
-        dialog.getDialogPane().setContent(
-                box
-        );
-
-        dialog.getDialogPane()
-                .getButtonTypes()
-                .addAll(
-                        ButtonType.OK,
-                        ButtonType.CANCEL
-                );
-
-        dialog.showAndWait()
-                .ifPresent(result -> {
-
-                    if (result == ButtonType.OK) {
-
-                        if (
-                                eventName.getText()
-                                        .trim()
-                                        .isEmpty()
-                                || eventDate.getValue()
-                                        == null
-                        ) {
-
-                            showMessage(
-                                    "Invalid Input",
-                                    "Please enter an event name and date."
-                            );
-
-                            return;
-                        }
-
-                        try {
-
-                            Connection conn =
-                                    DatabaseConnection
-                                            .getConnection();
-
-                            PreparedStatement ps =
-                                    conn.prepareStatement(
-                                            "INSERT INTO school_events " +
-                                                    "(eventName, eventDate, eventType) " +
-                                                    "VALUES (?, ?, ?)"
-                                    );
-
-                            ps.setString(
-                                    1,
-                                    eventName.getText()
-                            );
-
-                            ps.setString(
-                                    2,
-                                    eventDate.getValue()
-                                            .toString()
-                            );
-
-                            ps.setString(
-                                    3,
-                                    eventType.getValue()
-                            );
-
-                            ps.executeUpdate();
-
-                            ps.close();
-
-                            recordAudit(
-                                    "Added school event: "
-                                            + eventName.getText()
-                            );
-
-                            showSchoolCalendar(null);
-
-                        } catch (Exception e) {
-
-                            e.printStackTrace();
-
-                            showMessage(
-                                    "Error",
-                                    "Unable to add school event."
-                            );
-                        }
-                    }
-                });
-    }
-
-   
-    private void handleEditEvent(
-            ActionEvent event,
-            int eventId
-    ) {
-
-        try {
-
-            Connection conn =
-                    DatabaseConnection
-                            .getConnection();
-
-            PreparedStatement ps =
-                    conn.prepareStatement(
-                            "SELECT eventName, eventDate, eventType " +
-                                    "FROM school_events WHERE id = ?"
-                    );
-
-            ps.setInt(
-                    1,
-                    eventId
-            );
-
-            ResultSet rs =
-                    ps.executeQuery();
-
-            if (!rs.next()) {
-
-                showMessage(
-                        "Error",
-                        "Event not found."
-                );
-
-                return;
-            }
-
-            String oldName =
-                    rs.getString("eventName");
-
-            String oldDate =
-                    rs.getString("eventDate");
-
-            String oldType =
-                    rs.getString("eventType");
-
-            rs.close();
-            ps.close();
-
-            Dialog<ButtonType> dialog =
-                    new Dialog<>();
-
-            dialog.setTitle(
-                    "Edit School Event"
-            );
-
-            VBox box =
-                    new VBox(10);
-
-            TextField name =
-                    new TextField(oldName);
-
-            DatePicker date =
-                    new DatePicker(
-                            java.time.LocalDate.parse(
-                                    oldDate
-                            )
-                    );
-
-            ComboBox<String> type =
-                    new ComboBox<>(
-                            FXCollections.observableArrayList(
-                                    "Full Day",
-                                    "Half Day"
-                            )
-                    );
-
-            type.setValue(oldType);
-
-            box.getChildren().addAll(
-                    name,
-                    date,
-                    type
-            );
-
-            dialog.getDialogPane().setContent(
-                    box
-            );
-
-            dialog.getDialogPane()
-                    .getButtonTypes()
-                    .addAll(
-                            ButtonType.OK,
-                            ButtonType.CANCEL
-                    );
-
-            dialog.showAndWait()
-                    .ifPresent(result -> {
-
-                        if (
-                                result
-                                        == ButtonType.OK
-                        ) {
-
-                            try {
-
-                                PreparedStatement update =
-                                        conn.prepareStatement(
-                                                "UPDATE school_events " +
-                                                        "SET eventName = ?, " +
-                                                        "eventDate = ?, " +
-                                                        "eventType = ? " +
-                                                        "WHERE id = ?"
-                                        );
-
-                                update.setString(
-                                        1,
-                                        name.getText()
-                                );
-
-                                update.setString(
-                                        2,
-                                        date.getValue()
-                                                .toString()
-                                );
-
-                                update.setString(
-                                        3,
-                                        type.getValue()
-                                );
-
-                                update.setInt(
-                                        4,
-                                        eventId
-                                );
-
-                                update.executeUpdate();
-
-                                update.close();
-
-                                recordAudit(
-                                        "Edited school event: "
-                                                + name.getText()
-                                );
-
-                                showSchoolCalendar(
-                                        null
-                                );
-
-                            } catch (Exception e) {
-
-                                e.printStackTrace();
-
-                                showMessage(
-                                        "Error",
-                                        "Unable to update event."
-                                );
-                            }
-                        }
-                    });
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            showMessage(
-                    "Error",
-                    "Unable to edit event."
-            );
-        }
-    }
-
-    
-    private void handleDeleteEvent(
-            ActionEvent event,
-            int eventId
-    ) {
-
-        Alert confirmation =
-                new Alert(
-                        Alert.AlertType.CONFIRMATION
-                );
-
-        confirmation.setTitle(
-                "Delete Event"
-        );
-
-        confirmation.setHeaderText(
-                "Delete this school event?"
-        );
-
-        confirmation.setContentText(
-                "This action cannot be undone."
-        );
-
-        confirmation.showAndWait()
-                .ifPresent(result -> {
-
-                    if (
-                            result
-                                    == ButtonType.OK
-                    ) {
-
-                        try {
-
-                            Connection conn =
-                                    DatabaseConnection
-                                            .getConnection();
-
-                            PreparedStatement ps =
-                                    conn.prepareStatement(
-                                            "DELETE FROM school_events " +
-                                                    "WHERE id = ?"
-                                    );
-
-                            ps.setInt(
-                                    1,
-                                    eventId
-                            );
-
-                            ps.executeUpdate();
-
-                            ps.close();
-
-                            recordAudit(
-                                    "Deleted school event ID: "
-                                            + eventId
-                            );
-
-                            showSchoolCalendar(
-                                    null
-                            );
-
-                        } catch (Exception e) {
-
-                            e.printStackTrace();
-
-                            showMessage(
-                                    "Error",
-                                    "Unable to delete event."
-                            );
-                        }
-                    }
-                });
-    }
-
-    
-    private void recordAudit(
-            String action
-    ) {
-
-        try {
-
-            Connection conn =
-                    DatabaseConnection
-                            .getConnection();
-
-            String username =
-                    "Administrator";
-
-            if (
-                    SessionManager
-                            .getInstance()
-                            .getCurrentUser()
-                            != null
-            ) {
-
-                username =
-                        SessionManager
-                                .getInstance()
-                                .getCurrentUser()
-                                .getUsername();
-            }
-
-            PreparedStatement ps =
-                    conn.prepareStatement(
-                            "INSERT INTO audit_log " +
-                                    "(action, username) " +
-                                    "VALUES (?, ?)"
-                    );
-
-            ps.setString(
-                    1,
-                    action
-            );
-
-            ps.setString(
-                    2,
-                    username
-            );
-
-            ps.executeUpdate();
-
-            ps.close();
-
-        } catch (Exception e) {
-
-            System.err.println(
-                    "Unable to record audit log: "
-                            + e.getMessage()
-            );
-        }
-    }
-
-   
-    @FXML
-    private void handleLogout(
-            ActionEvent event
-    ) {
-
-        try {
-
-            SessionManager
-                    .getInstance()
-                    .endSession();
-
-            FXMLLoader loader =
-                    new FXMLLoader(
-                            getClass()
-                                    .getResource(
-                                            "/view/LoginView.fxml"
-                                    )
-                    );
-
-            Parent loginView =
-                    loader.load();
-
-            welcomeLabel
-                    .getScene()
-                    .setRoot(
-                            loginView
-                    );
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            showMessage(
-                    "Error",
-                    "Unable to return to the login screen."
-            );
-        }
-    }
-
-   
-    private void showMessage(
-            String title,
-            String message
-    ) {
-
-        Alert alert =
-                new Alert(
-                        Alert.AlertType.INFORMATION
-                );
-
-        alert.setTitle(
-                title
-        );
-
-        alert.setHeaderText(
-                null
-        );
-
-        alert.setContentText(
-                message
-        );
-
+    private void showErrorMessage(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
         alert.showAndWait();
     }
 }

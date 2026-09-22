@@ -83,7 +83,7 @@
         <echo message="Running application as regular Java application"/>
         <java classname="MainApp" fork="true">
             <jvmarg value="--module-path"/>
-            <jvmarg value="C:\\Users\\Admin\\Downloads\\zulu26.30.11-ca-fx-jdk26.0.1-win_x64\\zulu26.30.11-ca-fx-jdk26.0.1-win_x64\\jmods"/>
+            <jvmarg value="C:\\Users\\Admin\\Downloads\\zulu23.32.11-ca-fx-jdk23.0.2-win_x64\\zulu23.32.11-ca-fx-jdk23.0.2-win_x64\\jmods"/>
             <jvmarg value="--add-modules"/>
             <jvmarg value="javafx.controls,javafx.fxml,javafx.graphics"/>
             <classpath>
