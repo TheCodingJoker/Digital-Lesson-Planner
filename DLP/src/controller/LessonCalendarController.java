@@ -1,195 +1,197 @@
-
 package controller;
 
 import dao.LessonPlanDAO;
+import dao.SchoolEventDAO;
 import model.LessonPlan;
-import util.DialogHelper;
+import model.SchoolEvent;
+import model.User;
+import util.SessionManager;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class LessonCalendarController {
 
-    @FXML private Button prevButton;
-    @FXML private Button nextButton;
     @FXML private Label monthYearLabel;
+    @FXML private Button prevMonthButton;
+    @FXML private Button nextMonthButton;
+    @FXML private Button todayButton;
     @FXML private GridPane calendarGrid;
+    @FXML private VBox selectedDateLessons;
 
     private final LessonPlanDAO lessonPlanDAO = new LessonPlanDAO();
-    private static final String[] DAY_NAMES = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-    private static final DateTimeFormatter MONTH_YEAR = DateTimeFormatter.ofPattern("MMMM yyyy");
-
+    private final SchoolEventDAO schoolEventDAO = new SchoolEventDAO();
     private YearMonth currentMonth;
-    private String teacherId;
+    private LocalDate selectedDate;
+    private static final DateTimeFormatter MONTH_YEAR_FORMATTER = DateTimeFormatter.ofPattern("MMMM yyyy");
 
     @FXML
     public void initialize() {
         currentMonth = YearMonth.now();
-        addDayOfWeekHeaders();
+        selectedDate = LocalDate.now();
+
+        prevMonthButton.setOnAction(e -> navigateMonth(-1));
+        nextMonthButton.setOnAction(e -> navigateMonth(1));
+        todayButton.setOnAction(e -> goToToday());
+
+        loadCalendar();
     }
 
-    /** Must be called by the opener right after loading this fragment. */
-    public void setTeacherId(String teacherId) {
-        this.teacherId = teacherId;
-        renderMonth();
+    private void navigateMonth(int delta) {
+        currentMonth = currentMonth.plusMonths(delta);
+        loadCalendar();
     }
 
-    @FXML
-    private void handlePrevMonth() {
-        currentMonth = currentMonth.minusMonths(1);
-        renderMonth();
+    private void goToToday() {
+        currentMonth = YearMonth.now();
+        selectedDate = LocalDate.now();
+        loadCalendar();
     }
 
-    @FXML
-    private void handleNextMonth() {
-        currentMonth = currentMonth.plusMonths(1);
-        renderMonth();
-    }
+    private void loadCalendar() {
+        monthYearLabel.setText(currentMonth.format(MONTH_YEAR_FORMATTER));
+        calendarGrid.getChildren().clear();
 
-    private void addDayOfWeekHeaders() {
-        for (int i = 0; i < DAY_NAMES.length; i++) {
-            Label label = new Label(DAY_NAMES[i]);
-            label.getStyleClass().add("calendar-day-header");
-            label.setMaxWidth(Double.MAX_VALUE);
-            label.setAlignment(Pos.CENTER);
-            calendarGrid.add(label, i, 0);
+        // Add day headers
+        String[] dayNames = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+        for (int i = 0; i < 7; i++) {
+            Label dayLabel = new Label(dayNames[i]);
+            dayLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #666;");
+            calendarGrid.add(dayLabel, i, 0);
         }
-    }
 
-    private void renderMonth() {
-        if (teacherId == null) return;
+        // Get first day of month and number of days
+        LocalDate firstOfMonth = currentMonth.atDay(1);
+        int daysInMonth = currentMonth.lengthOfMonth();
+        int startDayOfWeek = firstOfMonth.getDayOfWeek().getValue() % 7; // 0 = Sunday
 
-        monthYearLabel.setText(currentMonth.format(MONTH_YEAR));
+        // Get user's lessons for the month
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        List<LessonPlan> lessons = currentUser != null ?
+            lessonPlanDAO.findByTeacher(currentUser.getUserId()) : List.of();
 
-        // Clear previously rendered day cells (keep row 0 = weekday headers)
-        calendarGrid.getChildren().removeIf(node -> {
-            Integer row = GridPane.getRowIndex(node);
-            return row != null && row > 0;
-        });
+        // Get school events for the month
+        List<SchoolEvent> events = schoolEventDAO.getAllSchoolEvents();
 
-        LocalDate monthStart = currentMonth.atDay(1);
-        LocalDate monthEnd = currentMonth.atEndOfMonth();
-
-        List<LessonPlan> plans = lessonPlanDAO.findByTeacherAndDateRange(
-            teacherId, monthStart.toString(), monthEnd.toString());
-
-        Map<String, List<LessonPlan>> plansByDate = plans.stream()
-            .filter(p -> p.getLessonDate() != null)
-            .collect(Collectors.groupingBy(LessonPlan::getLessonDate));
-
-        // DayOfWeek.getValue(): Mon=1..Sun=7. We want Sun=0..Sat=6.
-        int startColumn = monthStart.getDayOfWeek().getValue() % 7;
-
-        int column = startColumn;
+        // Add empty cells for days before the first of the month
         int row = 1;
-        LocalDate today = LocalDate.now();
+        int col = startDayOfWeek;
 
-        for (int day = 1; day <= monthEnd.getDayOfMonth(); day++) {
-            LocalDate cellDate = currentMonth.atDay(day);
-            VBox cell = buildDayCell(day, cellDate, plansByDate.get(cellDate.toString()), cellDate.equals(today));
-            calendarGrid.add(cell, column, row);
+        // Add day cells
+        for (int day = 1; day <= daysInMonth; day++) {
+            LocalDate date = currentMonth.atDay(day);
 
-            column++;
-            if (column > 6) {
-                column = 0;
+            VBox dayCell = new VBox(2);
+            dayCell.setStyle("-fx-background-color: #f5f5f5; -fx-background-radius: 4; -fx-padding: 8;");
+            dayCell.setPrefSize(100, 80);
+
+            Label dayLabel = new Label(String.valueOf(day));
+            dayLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+            // Check if this is today
+            if (date.equals(LocalDate.now())) {
+                dayCell.setStyle("-fx-background-color: #e3f2fd; -fx-background-radius: 4; -fx-padding: 8; -fx-border-color: #2196f3; -fx-border-width: 2;");
+            }
+
+            // Check if this is selected
+            if (date.equals(selectedDate)) {
+                dayCell.setStyle("-fx-background-color: #bbdefb; -fx-background-radius: 4; -fx-padding: 8; -fx-border-color: #1976d2; -fx-border-width: 2;");
+            }
+
+            // Check for events
+            for (SchoolEvent event : events) {
+                try {
+                    LocalDate eventDate = LocalDate.parse(event.getEventDate());
+                    if (eventDate.equals(date)) {
+                        Label eventLabel = new Label(event.getEventType().equals("FULL_DAY") ? "📅" : "📌");
+                        eventLabel.setStyle("-fx-font-size: 10px;");
+                        dayCell.getChildren().add(eventLabel);
+                    }
+                } catch (Exception e) {
+                    // Ignore date parse errors
+                }
+            }
+
+            // Check for lessons
+            int lessonCount = 0;
+            for (LessonPlan lesson : lessons) {
+                try {
+                    LocalDate lessonDate = LocalDate.parse(lesson.getLessonDate());
+                    if (lessonDate.equals(date)) {
+                        lessonCount++;
+                    }
+                } catch (Exception e) {
+                    // Ignore date parse errors
+                }
+            }
+
+            if (lessonCount > 0) {
+                Label lessonLabel = new Label(lessonCount + " lesson(s)");
+                lessonLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #666;");
+                dayCell.getChildren().add(lessonLabel);
+            }
+
+            dayCell.getChildren().add(0, dayLabel);
+
+            // Make cell clickable
+            final LocalDate clickedDate = date;
+            dayCell.setOnMouseClicked(e -> {
+                selectedDate = clickedDate;
+                loadCalendar();
+                loadSelectedDateLessons();
+            });
+
+            calendarGrid.add(dayCell, col, row);
+
+            col++;
+            if (col >= 7) {
+                col = 0;
                 row++;
             }
         }
+
+        loadSelectedDateLessons();
     }
 
-    private VBox buildDayCell(int dayNumber, LocalDate date, List<LessonPlan> lessonsOnDay, boolean isToday) {
-        Label dayLabel = new Label(String.valueOf(dayNumber));
-        dayLabel.getStyleClass().add("calendar-day-number");
+    private void loadSelectedDateLessons() {
+        selectedDateLessons.getChildren().clear();
 
-        VBox cell = new VBox(4, dayLabel);
-        cell.getStyleClass().add("calendar-day-cell");
-        if (isToday) {
-            cell.getStyleClass().add("calendar-day-cell-today");
-        }
-        cell.setMinHeight(78);
-        VBox.setVgrow(cell, Priority.ALWAYS);
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        if (currentUser == null) return;
 
-        if (lessonsOnDay != null) {
-            for (LessonPlan plan : lessonsOnDay) {
-                Label pill = new Label(plan.getSubject());
-                pill.getStyleClass().addAll("calendar-event-pill", statusPillClass(plan.getStatus()));
-                pill.setMaxWidth(Double.MAX_VALUE);
-                pill.setTooltip(new Tooltip(plan.getTitle() + " \u2014 right-click for options"));
-                pill.setContextMenu(buildPillContextMenu(plan));
-                cell.getChildren().add(pill);
+        List<LessonPlan> lessons = lessonPlanDAO.findByTeacher(currentUser.getUserId());
+
+        int count = 0;
+        for (LessonPlan lesson : lessons) {
+            try {
+                LocalDate lessonDate = LocalDate.parse(lesson.getLessonDate());
+                if (lessonDate.equals(selectedDate)) {
+                    count++;
+                    Label lessonLabel = new Label(
+                        lesson.getSubject() + " - " + lesson.getTopic() + " (" + lesson.getStatus() + ")"
+                    );
+                    lessonLabel.setStyle("-fx-padding: 8; -fx-background-color: #f9f9f9; -fx-background-radius: 4;");
+                    selectedDateLessons.getChildren().add(lessonLabel);
+                }
+            } catch (Exception e) {
+                // Ignore date parse errors
             }
         }
 
-        return cell;
-    }
-
-    private ContextMenu buildPillContextMenu(LessonPlan plan) {
-        MenuItem editItem = new MenuItem("Edit");
-        editItem.setOnAction(e -> handleEdit(plan));
-
-        MenuItem completeItem = new MenuItem("Mark Completed");
-        completeItem.setOnAction(e -> handleMarkStatus(plan, LessonPlan.STATUS_COMPLETED));
-
-        MenuItem extendItem = new MenuItem("Mark Extended");
-        extendItem.setOnAction(e -> handleMarkStatus(plan, LessonPlan.STATUS_EXTENDED));
-
-        MenuItem deleteItem = new MenuItem("Delete");
-        deleteItem.setOnAction(e -> handleDelete(plan));
-
-        return new ContextMenu(editItem, completeItem, extendItem, deleteItem);
-    }
-
-    private void handleEdit(LessonPlan plan) {
-        Optional<LessonPlan> result = DialogHelper.showLessonPlanDialog(
-            calendarGrid.getScene().getWindow(), plan, plan.getTeacherId());
-
-        result.ifPresent(updatedPlan -> {
-            lessonPlanDAO.updateLessonPlan(updatedPlan);
-            renderMonth();
-        });
-    }
-
-    private void handleMarkStatus(LessonPlan plan, String newStatus) {
-        lessonPlanDAO.updateStatus(plan.getLessonPlanId(), newStatus);
-        renderMonth();
-    }
-
-    private void handleDelete(LessonPlan plan) {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Delete Lesson Plan");
-        confirm.setHeaderText("Delete \"" + plan.getTitle() + "\"?");
-        confirm.setContentText("This can't be undone.");
-
-        Optional<ButtonType> result = confirm.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            lessonPlanDAO.deleteLessonPlan(plan.getLessonPlanId());
-            renderMonth();
-        }
-    }
-
-    private String statusPillClass(String status) {
-        if (status == null) return "calendar-event-scheduled";
-        switch (status) {
-            case LessonPlan.STATUS_COMPLETED: return "calendar-event-completed";
-            case LessonPlan.STATUS_EXTENDED: return "calendar-event-extended";
-            default: return "calendar-event-scheduled";
+        if (count == 0) {
+            Label noLessons = new Label("No lessons scheduled for this date");
+            noLessons.setStyle("-fx-text-fill: #999; -fx-padding: 8;");
+            selectedDateLessons.getChildren().add(noLessons);
         }
     }
 }

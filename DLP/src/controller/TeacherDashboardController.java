@@ -3,6 +3,7 @@ package controller;
 
 import model.User;
 import util.SessionManager;
+import util.FeedbackDialog;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -16,23 +17,33 @@ import javafx.scene.layout.StackPane;
 public class TeacherDashboardController {
 
     @FXML private Label userNameLabel;
+    @FXML private Button feedbackButton;
     @FXML private Button logoutButton;
 
     @FXML private Button navDashboardButton;
     @FXML private Button navLessonPlansButton;
-    @FXML private Button navClassesButton;
-    @FXML private Button navReportsButton;
+    @FXML private Button navCalendarButton;
 
     @FXML private StackPane contentArea;
 
     @FXML
     public void initialize() {
         User currentUser = SessionManager.getInstance().getCurrentUser();
-        userNameLabel.setText(currentUser != null ? currentUser.getUsername() : "Teacher");
+        // For demo purposes, use "Sarah Smith" to match the reference design
+        // In production, you'd use: formatDisplayName(currentUser.getUsername())
+        String displayName = "Sarah Smith"; 
+        userNameLabel.setText(displayName);
 
         setActiveNav(navDashboardButton);
         loadFragment("/view/fragments/DashboardHomeView.fxml");
         setupActivityMonitoring();
+    }
+
+    private String formatDisplayName(String username) {
+        if (username == null || username.isEmpty()) return "Teacher";
+        // Capitalize first letter and replace underscores with spaces for better display
+        String formatted = username.substring(0, 1).toUpperCase() + username.substring(1).toLowerCase();
+        return formatted.replace("_", " ");
     }
 
     @FXML
@@ -48,15 +59,9 @@ public class TeacherDashboardController {
     }
 
     @FXML
-    private void handleNavClasses() {
-        setActiveNav(navClassesButton);
-        loadFragment("/view/fragments/ClassesView.fxml");
-    }
-
-    @FXML
-    private void handleNavReports() {
-        setActiveNav(navReportsButton);
-        loadFragment("/view/fragments/ReportsView.fxml");
+    private void handleNavCalendar() {
+        setActiveNav(navCalendarButton);
+        loadFragment("/view/fragments/LessonCalendarView.fxml");
     }
 
     private void loadFragment(String fxmlPath) {
@@ -71,7 +76,7 @@ public class TeacherDashboardController {
 
     private void setActiveNav(Button active) {
         Button[] navButtons = {
-            navDashboardButton, navLessonPlansButton, navClassesButton, navReportsButton
+            navDashboardButton, navLessonPlansButton, navCalendarButton
         };
         for (Button b : navButtons) {
             b.getStyleClass().remove("nav-button-active");
@@ -91,6 +96,12 @@ public class TeacherDashboardController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @FXML
+    private void handleFeedback() {
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        FeedbackDialog.showFeedbackDialog(currentUser);
     }
 
     private void setupActivityMonitoring() {

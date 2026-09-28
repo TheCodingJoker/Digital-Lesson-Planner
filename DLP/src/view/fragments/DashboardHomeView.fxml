@@ -12,28 +12,28 @@
 <ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="controller.DashboardHomeController"
             fitToWidth="true" styleClass="dashboard-content">
-    <VBox spacing="24">
+    <VBox spacing="20">
         <padding>
-            <Insets top="28" right="28" bottom="28" left="28"/>
+            <Insets top="24" right="24" bottom="24" left="24"/>
         </padding>
 
         <!-- Welcome Banner -->
         <HBox styleClass="welcome-banner" alignment="CENTER_LEFT" spacing="16">
             <padding>
-                <Insets top="28" right="32" bottom="28" left="32"/>
+                <Insets top="24" right="32" bottom="24" left="32"/>
             </padding>
-            <VBox spacing="6">
+            <VBox spacing="4">
                 <Label fx:id="welcomeLabel" styleClass="welcome-title"/>
                 <Label text="You're making great progress this term" styleClass="welcome-subtitle"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="+  Create Lesson Plan" onAction="#handleNewLessonPlan" styleClass="welcome-cta-button"/>
+            <Button text="Create Lesson Plan" onAction="#handleNewLessonPlan" styleClass="welcome-cta-button"/>
         </HBox>
 
         <!-- KPI Cards -->
-        <FlowPane hgap="18" vgap="18">
+        <FlowPane hgap="16" vgap="16">
 
-            <VBox styleClass="kpi-card" spacing="10" prefWidth="260">
+            <VBox styleClass="kpi-card" spacing="8" prefWidth="240">
                 <HBox alignment="CENTER_LEFT">
                     <Label text="&#10003;" styleClass="kpi-icon, kpi-icon-green"/>
                     <Region HBox.hgrow="ALWAYS"/>
@@ -47,19 +47,19 @@
                 <Label fx:id="lessonsProgressLabel" styleClass="kpi-progress-text"/>
             </VBox>
 
-            <VBox styleClass="kpi-card" spacing="10" prefWidth="260">
+            <VBox styleClass="kpi-card" spacing="8" prefWidth="240">
                 <Label text="&#9201;" styleClass="kpi-icon, kpi-icon-blue"/>
                 <Label fx:id="inProgressValue" styleClass="kpi-value"/>
                 <Label text="In Progress" styleClass="kpi-title"/>
             </VBox>
 
-            <VBox styleClass="kpi-card" spacing="10" prefWidth="260">
+            <VBox styleClass="kpi-card" spacing="8" prefWidth="240">
                 <Label text="!" styleClass="kpi-icon, kpi-icon-orange"/>
                 <Label fx:id="behindScheduleValue" styleClass="kpi-value"/>
                 <Label text="Behind Schedule" styleClass="kpi-title"/>
             </VBox>
 
-            <VBox styleClass="kpi-card" spacing="10" prefWidth="260">
+            <VBox styleClass="kpi-card" spacing="8" prefWidth="240">
                 <Label text="&#128197;" styleClass="kpi-icon, kpi-icon-purple"/>
                 <Label fx:id="schoolEventsValue" styleClass="kpi-value"/>
                 <Label text="Upcoming School Events" styleClass="kpi-title, kpi-title-link"/>
@@ -70,7 +70,7 @@
                 </VBox>
             </VBox>
 
-            <VBox styleClass="kpi-card" spacing="10" prefWidth="260">
+            <VBox styleClass="kpi-card" spacing="8" prefWidth="240">
                 <Label text="&#128197;" styleClass="kpi-icon, kpi-icon-purple"/>
                 <Label fx:id="teachingDaysLeftValue" styleClass="kpi-value"/>
                 <Label text="Teaching Days Left" styleClass="kpi-title"/>
@@ -79,20 +79,21 @@
         </FlowPane>
 
         <!-- Upcoming Lessons + Recent Lessons -->
-        <HBox spacing="24">
-            <VBox styleClass="content-card" spacing="12" HBox.hgrow="ALWAYS">
+        <HBox spacing="16">
+            <VBox styleClass="content-card" spacing="10" HBox.hgrow="ALWAYS">
                 <HBox alignment="CENTER_LEFT" spacing="12">
-                    <Label text="&#128197;  Upcoming Lessons" styleClass="section-label"/>
+                    <Label text="Upcoming Lessons" styleClass="section-label"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Button text="View All" onAction="#handleViewAllUpcoming" styleClass="link-button"/>
                 </HBox>
                 <VBox fx:id="upcomingLessonsBox" spacing="0"/>
             </VBox>
 
-            <VBox styleClass="content-card" spacing="12" HBox.hgrow="ALWAYS">
+            <VBox styleClass="content-card" spacing="10" HBox.hgrow="ALWAYS">
                 <HBox alignment="CENTER_LEFT" spacing="12">
-                    <Label text="&#128214;  Recent Lessons" styleClass="section-label"/>
+                    <Label text="Recent Lessons" styleClass="section-label"/>
                     <Region HBox.hgrow="ALWAYS"/>
+                    <Label text="&#9881;" styleClass="filter-icon"/>
                 </HBox>
                 <VBox fx:id="recentLessonsBox" spacing="0"/>
             </VBox>

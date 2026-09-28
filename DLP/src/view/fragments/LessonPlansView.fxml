@@ -3,9 +3,11 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
@@ -21,9 +23,30 @@
         <HBox alignment="CENTER_LEFT" spacing="12">
             <Label text="My Lesson Plans" styleClass="section-label"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label text="Status:" styleClass="field-label"/>
-            <ComboBox fx:id="filterStatusCombo"/>
             <Button text="+  Create Lesson Plan" onAction="#handleNewLessonPlan" styleClass="primary-button"/>
+        </HBox>
+
+        <HBox alignment="CENTER_LEFT" spacing="8" styleClass="filter-bar">
+            <Label text="Search:" styleClass="field-label"/>
+            <TextField fx:id="searchField" promptText="Search by topic..." prefWidth="200"/>
+
+            <Label text="Subject:" styleClass="field-label"/>
+            <ComboBox fx:id="filterSubjectCombo" promptText="All Subjects" prefWidth="140"/>
+
+            <Label text="Grade:" styleClass="field-label"/>
+            <ComboBox fx:id="filterGradeCombo" promptText="All Grades" prefWidth="120"/>
+
+            <Label text="Status:" styleClass="field-label"/>
+            <ComboBox fx:id="filterStatusCombo" promptText="All Status" prefWidth="120"/>
+
+            <Label text="From:" styleClass="field-label"/>
+            <DatePicker fx:id="filterStartDate" prefWidth="130"/>
+
+            <Label text="To:" styleClass="field-label"/>
+            <DatePicker fx:id="filterEndDate" prefWidth="130"/>
+
+            <Button text="Apply Filters" onAction="#handleApplyFilters" styleClass="secondary-button"/>
+            <Button text="Clear" onAction="#handleClearFilters" styleClass="secondary-button"/>
         </HBox>
 
         <TableView fx:id="lessonPlansTable" VBox.vgrow="ALWAYS">

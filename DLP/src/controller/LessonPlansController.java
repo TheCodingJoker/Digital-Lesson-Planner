@@ -20,7 +20,12 @@ import java.util.Optional;
 
 public class LessonPlansController {
 
+    @FXML private TextField searchField;
+    @FXML private ComboBox<String> filterSubjectCombo;
+    @FXML private ComboBox<String> filterGradeCombo;
     @FXML private ComboBox<String> filterStatusCombo;
+    @FXML private DatePicker filterStartDate;
+    @FXML private DatePicker filterEndDate;
     @FXML private TableView<LessonPlan> lessonPlansTable;
     @FXML private TableColumn<LessonPlan, String> titleColumn;
     @FXML private TableColumn<LessonPlan, String> subjectColumn;
@@ -51,11 +56,28 @@ public class LessonPlansController {
 
         actionsColumn.setCellFactory(buildActionsCellFactory());
 
-        filterStatusCombo.setItems(FXCollections.observableArrayList("All", "Scheduled", "Completed", "Extended"));
-        filterStatusCombo.getSelectionModel().selectFirst();
-        filterStatusCombo.valueProperty().addListener((obs, oldVal, newVal) -> loadLessonPlans());
+        // Populate filter combos
+        filterSubjectCombo.setItems(FXCollections.observableArrayList(
+            "All Subjects", "Mathematics", "English Home Language", "Life Skills",
+            "Natural Sciences", "Life Sciences", "Social Sciences",
+            "Economic and Management Sciences", "Technology", "History",
+            "Life Orientation", "Afrikaans First Additional Language"
+        ));
+        filterSubjectCombo.getSelectionModel().selectFirst();
 
-        lessonPlansTable.setPlaceholder(new Label("No lesson plans yet. Click \"+ Create Lesson Plan\" to add one."));
+        filterGradeCombo.setItems(FXCollections.observableArrayList(
+            "All Grades", "Grade R", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5",
+            "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"
+        ));
+        filterGradeCombo.getSelectionModel().selectFirst();
+
+        filterStatusCombo.setItems(FXCollections.observableArrayList("All Status", "Scheduled", "Completed", "Extended"));
+        filterStatusCombo.getSelectionModel().selectFirst();
+
+        // Enable real-time search
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> applyFilters());
+
+        lessonPlansTable.setPlaceholder(new Label("No lesson plans match your filters."));
 
         loadLessonPlans();
     }
@@ -65,11 +87,82 @@ public class LessonPlansController {
         if (currentUser == null) return;
 
         List<LessonPlan> plans = lessonPlanDAO.findByTeacher(currentUser.getUserId());
-        String filter = filterStatusCombo.getValue();
+        ObservableList<LessonPlan> items = FXCollections.observableArrayList(plans);
+        lessonPlansTable.setItems(items);
+    }
 
-        if (filter != null && !"All".equals(filter)) {
-            String statusFilter = toStoredStatus(filter);
-            plans = plans.stream().filter(p -> statusFilter.equals(p.getStatus())).toList();
+    @FXML
+    private void handleApplyFilters() {
+        applyFilters();
+    }
+
+    @FXML
+    private void handleClearFilters() {
+        searchField.clear();
+        filterSubjectCombo.getSelectionModel().selectFirst();
+        filterGradeCombo.getSelectionModel().selectFirst();
+        filterStatusCombo.getSelectionModel().selectFirst();
+        filterStartDate.setValue(null);
+        filterEndDate.setValue(null);
+        loadLessonPlans();
+    }
+
+    private void applyFilters() {
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        if (currentUser == null) return;
+
+        List<LessonPlan> plans = lessonPlanDAO.findByTeacher(currentUser.getUserId());
+
+        // Search text filter
+        String searchText = searchField.getText().toLowerCase();
+        if (searchText != null && !searchText.isEmpty()) {
+            plans = plans.stream()
+                .filter(p -> p.getTitle() != null && p.getTitle().toLowerCase().contains(searchText))
+                .toList();
+        }
+
+        // Subject filter
+        String subjectFilter = filterSubjectCombo.getValue();
+        if (subjectFilter != null && !subjectFilter.equals("All Subjects")) {
+            plans = plans.stream()
+                .filter(p -> subjectFilter.equals(p.getSubject()))
+                .toList();
+        }
+
+        // Grade filter
+        String gradeFilter = filterGradeCombo.getValue();
+        if (gradeFilter != null && !gradeFilter.equals("All Grades")) {
+            plans = plans.stream()
+                .filter(p -> gradeFilter.equals(p.getGradeLevel()))
+                .toList();
+        }
+
+        // Status filter
+        String statusFilter = filterStatusCombo.getValue();
+        if (statusFilter != null && !statusFilter.equals("All Status")) {
+            String storedStatus = toStoredStatus(statusFilter);
+            plans = plans.stream()
+                .filter(p -> storedStatus.equals(p.getStatus()))
+                .toList();
+        }
+
+        // Date range filter
+        LocalDate startDate = filterStartDate.getValue();
+        LocalDate endDate = filterEndDate.getValue();
+        if (startDate != null || endDate != null) {
+            plans = plans.stream()
+                .filter(p -> {
+                    if (p.getLessonDate() == null || p.getLessonDate().isEmpty()) return false;
+                    try {
+                        LocalDate lessonDate = LocalDate.parse(p.getLessonDate());
+                        if (startDate != null && lessonDate.isBefore(startDate)) return false;
+                        if (endDate != null && lessonDate.isAfter(endDate)) return false;
+                        return true;
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                .toList();
         }
 
         ObservableList<LessonPlan> items = FXCollections.observableArrayList(plans);
@@ -167,6 +260,7 @@ public class LessonPlansController {
     }
 
     private String toStoredStatus(String display) {
+        if (display == null || display.equals("All Status")) return null;
         switch (display) {
             case "Completed": return LessonPlan.STATUS_COMPLETED;
             case "Extended": return LessonPlan.STATUS_EXTENDED;
