@@ -57,11 +57,20 @@ public class DialogHelper {
             Stage stage = buildModalStage(owner, chrome.root);
             LessonPlan[] resultHolder = new LessonPlan[1];
 
-            chrome.cancelButton.setOnAction(e -> stage.close());
-            chrome.closeButton.setOnAction(e -> stage.close());
+            chrome.cancelButton.setOnAction(e -> {
+                if (UnsavedChangesTracker.getInstance().confirmProceedIfUnsaved()) {
+                    stage.close();
+                }
+            });
+            chrome.closeButton.setOnAction(e -> {
+                if (UnsavedChangesTracker.getInstance().confirmProceedIfUnsaved()) {
+                    stage.close();
+                }
+            });
             chrome.primaryButton.setOnAction(e -> {
                 if (formController.isValid()) {
                     resultHolder[0] = formController.toLessonPlan(teacherId);
+                    UnsavedChangesTracker.getInstance().markAsSaved();
                     stage.close();
                 }
             });

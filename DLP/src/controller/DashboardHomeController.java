@@ -2,7 +2,9 @@
 package controller;
 
 import dao.LessonPlanDAO;
+import dao.SchoolEventDAO;
 import model.LessonPlan;
+import model.SchoolEvent;
 import model.User;
 import service.SchedulingEngine;
 import service.ExportService;
@@ -57,6 +59,7 @@ public class DashboardHomeController {
     @FXML private VBox recentLessonsBox;
 
     private final LessonPlanDAO lessonPlanDAO = new LessonPlanDAO();
+    private final SchoolEventDAO schoolEventDAO = new SchoolEventDAO();
     private final SchedulingEngine schedulingEngine = SchedulingEngine.getInstance();
 
     private static final DateTimeFormatter LONG_DATE = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy");
@@ -123,14 +126,38 @@ public class DashboardHomeController {
             lessonsProgressLabel.setText(percent + "% complete");
         }
 
-        // Upcoming School Events: illustrative placeholder - this app doesn't yet have a
-        // school-events feature, so this mirrors the reference design without real data behind it.
-        schoolEventsValue.setText("3");
-        nextEventNameLabel.setText("Sports Day");
-        nextEventDateLabel.setText("15 May");
+        // Calculate teaching days remaining
+        List<SchoolEvent> events = schoolEventDAO.getAllSchoolEvents();
+        int teachingDaysLeft = calculateTeachingDaysRemaining(today, TERM_END_DATE, events);
+        teachingDaysLeftValue.setText(String.valueOf(teachingDaysLeft));
 
-        // Use sample data from reference design for demonstration
-        teachingDaysLeftValue.setText("98");
+        // School events
+        List<SchoolEvent> upcomingEvents = events.stream()
+            .filter(e -> {
+                try {
+                    LocalDate eventDate = LocalDate.parse(e.getEventDate());
+                    return !eventDate.isBefore(today);
+                } catch (Exception ex) {
+                    return false;
+                }
+            })
+            .sorted((a, b) -> a.getEventDate().compareTo(b.getEventDate()))
+            .limit(3)
+            .toList();
+
+        schoolEventsValue.setText(String.valueOf(upcomingEvents.size()));
+        if (!upcomingEvents.isEmpty()) {
+            nextEventNameLabel.setText(upcomingEvents.get(0).getEventName());
+            try {
+                LocalDate eventDate = LocalDate.parse(upcomingEvents.get(0).getEventDate());
+                nextEventDateLabel.setText(eventDate.format(DateTimeFormatter.ofPattern("d MMM")));
+            } catch (Exception e) {
+                nextEventDateLabel.setText("TBD");
+            }
+        } else {
+            nextEventNameLabel.setText("No upcoming events");
+            nextEventDateLabel.setText("-");
+        }
 
         renderLessonRows(upcomingLessonsBox, plans.stream()
             .filter(p -> !LessonPlan.STATUS_COMPLETED.equals(p.getStatus()))
@@ -500,5 +527,38 @@ public class DashboardHomeController {
             case LessonPlan.STATUS_EXTENDED: return "badge-extended";
             default: return "badge-scheduled";
         }
+    }
+
+    /**
+     * Calculates the number of teaching days remaining between two dates,
+     * excluding weekends and full-day school events.
+     */
+    private int calculateTeachingDaysRemaining(LocalDate startDate, LocalDate endDate, List<SchoolEvent> events) {
+        int teachingDays = 0;
+        LocalDate current = startDate;
+
+        while (!current.isAfter(endDate)) {
+            // Skip weekends
+            if (current.getDayOfWeek() != DayOfWeek.SATURDAY && current.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                // Check if this day is a full-day event
+                final LocalDate currentDate = current;
+                boolean isFullDayEvent = events.stream()
+                    .anyMatch(e -> {
+                        try {
+                            LocalDate eventDate = LocalDate.parse(e.getEventDate());
+                            return eventDate.equals(currentDate) && "FULL_DAY".equals(e.getEventType());
+                        } catch (Exception ex) {
+                            return false;
+                        }
+                    });
+
+                if (!isFullDayEvent) {
+                    teachingDays++;
+                }
+            }
+            current = current.plusDays(1);
+        }
+
+        return teachingDays;
     }
 }

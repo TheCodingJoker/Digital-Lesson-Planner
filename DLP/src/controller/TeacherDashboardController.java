@@ -22,8 +22,7 @@ public class TeacherDashboardController {
 
     @FXML private Button navDashboardButton;
     @FXML private Button navLessonPlansButton;
-    @FXML private Button navClassesButton;
-    @FXML private Button navReportsButton;
+    @FXML private Button navCalendarButton;
 
     @FXML private StackPane contentArea;
 
@@ -60,15 +59,9 @@ public class TeacherDashboardController {
     }
 
     @FXML
-    private void handleNavClasses() {
-        setActiveNav(navClassesButton);
-        loadFragment("/view/fragments/ClassesView.fxml");
-    }
-
-    @FXML
-    private void handleNavReports() {
-        setActiveNav(navReportsButton);
-        loadFragment("/view/fragments/ReportsView.fxml");
+    private void handleNavCalendar() {
+        setActiveNav(navCalendarButton);
+        loadFragment("/view/fragments/LessonCalendarView.fxml");
     }
 
     private void loadFragment(String fxmlPath) {
@@ -83,7 +76,7 @@ public class TeacherDashboardController {
 
     private void setActiveNav(Button active) {
         Button[] navButtons = {
-            navDashboardButton, navLessonPlansButton, navClassesButton, navReportsButton
+            navDashboardButton, navLessonPlansButton, navCalendarButton
         };
         for (Button b : navButtons) {
             b.getStyleClass().remove("nav-button-active");

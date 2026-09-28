@@ -8,6 +8,7 @@ import dao.LessonPlanDAO;
 import service.SchedulingEngine;
 import util.ErrorLogger;
 import util.SessionManager;
+import util.UnsavedChangesTracker;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
@@ -43,6 +44,7 @@ public class LessonPlanFormController {
     private ErrorLogger errorLogger;
     private SchedulingEngine schedulingEngine;
     private LessonPlanDAO lessonPlanDAO;
+    private UnsavedChangesTracker unsavedChangesTracker;
     private boolean autoPopulateEnabled = true;
 
     @FXML
@@ -51,7 +53,8 @@ public class LessonPlanFormController {
         errorLogger = ErrorLogger.getInstance();
         lessonPlanDAO = new LessonPlanDAO();
         schedulingEngine = SchedulingEngine.getInstance();
-        
+        unsavedChangesTracker = UnsavedChangesTracker.getInstance();
+
         subjectCombo.setItems(FXCollections.observableArrayList(
             "Mathematics", "English Home Language", "Life Skills",
             "Natural Sciences", "Life Sciences", "Social Sciences",
@@ -71,6 +74,7 @@ public class LessonPlanFormController {
         // Add listeners for CAPS auto-populate
         setupCAPSAutoPopulate();
         setupActivityMonitoring();
+        setupUnsavedChangesTracking();
     }
 
     /** Pre-fills the form when editing an existing lesson plan. */
@@ -234,5 +238,49 @@ public class LessonPlanFormController {
                     e -> SessionManager.getInstance().resetInactivityTimer());
             }
         });
+    }
+
+    private void setupUnsavedChangesTracking() {
+        // Mark as unsaved when any field changes
+        gradeCombo.setOnAction(e -> unsavedChangesTracker.markUnsavedChanges());
+        subjectCombo.setOnAction(e -> unsavedChangesTracker.markUnsavedChanges());
+        termCombo.setOnAction(e -> unsavedChangesTracker.markUnsavedChanges());
+        durationField.textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
+        lessonDatePicker.setOnAction(e -> unsavedChangesTracker.markUnsavedChanges());
+        topicField.textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
+        objectivesArea.textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
+        teachingActivitiesArea.textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
+        assessmentArea.textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
+        resourcesField.textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
+
+        // Set save callback
+        unsavedChangesTracker.setOnSaveCallback(() -> {
+            // Trigger save logic
+            saveLessonPlan();
+        });
+    }
+
+    private void saveLessonPlan() {
+        if (!isValid()) {
+            return;
+        }
+
+        try {
+            String teacherId = SessionManager.getInstance().getCurrentUser().getUserId();
+            LessonPlan plan = toLessonPlan(teacherId);
+
+            if (editingLessonPlanId == null) {
+                lessonPlanDAO.createLessonPlan(plan);
+            } else {
+                lessonPlanDAO.updateLessonPlan(plan);
+            }
+
+            unsavedChangesTracker.markAsSaved();
+            errorLabel.setText("Saved successfully!");
+            errorLabel.setStyle("-fx-text-fill: green;");
+        } catch (Exception e) {
+            errorLabel.setText("Failed to save: " + e.getMessage());
+            errorLabel.setStyle("-fx-text-fill: red;");
+        }
     }
 }

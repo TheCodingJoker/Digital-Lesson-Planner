@@ -17,17 +17,26 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         System.out.println("Starting application...");
-        
+
+        // Initialize database encryption
+        DatabaseConnection.initializeDatabase();
+
         // Initialize database and create default admin user
         initializeDatabase();
         createDefaultAdminIfNeeded();
-        
+
+        // Add shutdown hook to encrypt database on exit
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Shutting down... Encrypting database.");
+            DatabaseConnection.encryptAndClose();
+        }));
+
         System.out.println("Loading FXML file...");
         // Load login view
         FXMLLoader loader = new FXMLLoader(
             getClass().getResource("/view/LoginView.fxml"));
         Parent root = loader.load();
-        
+
         System.out.println("Setting up stage...");
         // Setup stage
         Scene scene = new Scene(root);
@@ -35,7 +44,7 @@ public class MainApp extends Application {
         primaryStage.setScene(scene);
         primaryStage.setMinWidth(800);
         primaryStage.setMinHeight(600);
-        
+
         System.out.println("Showing stage...");
         primaryStage.show();
         System.out.println("Application started successfully!");
