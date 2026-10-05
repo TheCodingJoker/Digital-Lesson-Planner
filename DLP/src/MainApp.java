@@ -87,6 +87,7 @@ public class MainApp extends Application {
                 addColumnIfMissing(stmt, "LessonPlan", "durationMinutes", "INTEGER DEFAULT 60");
                 addColumnIfMissing(stmt, "LessonPlan", "teachingActivities", "TEXT");
                 addColumnIfMissing(stmt, "LessonPlan", "snapshotId", "TEXT");
+                addColumnIfMissing(stmt, "LessonPlan", "reschedulingNote", "TEXT");
 
                 stmt.execute("CREATE TABLE IF NOT EXISTS SchoolClass (" +
                     "classId TEXT PRIMARY KEY, " +
@@ -151,6 +152,37 @@ public class MainApp extends Application {
                     "adminNotes TEXT, " +
                     "createdAt TEXT DEFAULT (datetime('now','localtime')), " +
                     "updatedAt TEXT DEFAULT (datetime('now','localtime')), " +
+                    "FOREIGN KEY (userId) REFERENCES User(userId))");
+
+                // School Calendar Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS SchoolCalendar (" +
+                    "academicYear INTEGER PRIMARY KEY, " +
+                    "totalTeachingDays INTEGER NOT NULL DEFAULT 180, " +
+                    "startDate TEXT NOT NULL, " +
+                    "endDate TEXT NOT NULL)");
+
+                // Progress Report Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS ProgressReport (" +
+                    "reportId TEXT PRIMARY KEY, " +
+                    "teacherId TEXT NOT NULL, " +
+                    "subject TEXT NOT NULL, " +
+                    "completionPercentage REAL NOT NULL, " +
+                    "totalLessons INTEGER NOT NULL, " +
+                    "completedLessons INTEGER NOT NULL, " +
+                    "generatedAt TEXT NOT NULL, " +
+                    "term TEXT NOT NULL, " +
+                    "FOREIGN KEY (teacherId) REFERENCES User(userId))");
+
+                // Notification Table
+                stmt.execute("CREATE TABLE IF NOT EXISTS Notification (" +
+                    "notificationId TEXT PRIMARY KEY, " +
+                    "userId TEXT NOT NULL, " +
+                    "type TEXT NOT NULL, " +
+                    "title TEXT NOT NULL, " +
+                    "message TEXT NOT NULL, " +
+                    "relatedEntityId TEXT, " +
+                    "isRead INTEGER DEFAULT 0, " +
+                    "createdAt TEXT NOT NULL, " +
                     "FOREIGN KEY (userId) REFERENCES User(userId))");
             }
             System.out.println("Database initialized successfully.");

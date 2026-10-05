@@ -70,7 +70,7 @@ public class LessonPlanDAO {
         String sql = "UPDATE LessonPlan SET title = ?, subject = ?, gradeLevel = ?, " +
             "curriculumReference = ?, topic = ?, durationMinutes = ?, objectives = ?, " +
             "teachingActivities = ?, assessmentMethod = ?, resources = ?, lessonDate = ?, " +
-            "status = ?, updatedAt = datetime('now','localtime') WHERE lessonPlanId = ?";
+            "status = ?, reschedulingNote = ?, updatedAt = datetime('now','localtime') WHERE lessonPlanId = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -87,7 +87,8 @@ public class LessonPlanDAO {
             pstmt.setString(10, plan.getResources());
             pstmt.setString(11, plan.getLessonDate());
             pstmt.setString(12, plan.getStatus());
-            pstmt.setString(13, plan.getLessonPlanId());
+            pstmt.setString(13, plan.getReschedulingNote());
+            pstmt.setString(14, plan.getLessonPlanId());
 
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -227,6 +228,141 @@ public class LessonPlanDAO {
         return 0;
     }
 
+    /**
+     * Search lesson plans with comprehensive filters
+     */
+    public List<LessonPlan> searchLessonPlans(String teacherId, String subject, String gradeLevel,
+                                               String term, String status, String startDate, String endDate,
+                                               String keyword) {
+        List<LessonPlan> plans = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM LessonPlan WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        if (teacherId != null && !teacherId.isEmpty()) {
+            sql.append(" AND teacherId = ?");
+            params.add(teacherId);
+        }
+
+        if (subject != null && !subject.isEmpty()) {
+            sql.append(" AND subject = ?");
+            params.add(subject);
+        }
+
+        if (gradeLevel != null && !gradeLevel.isEmpty()) {
+            sql.append(" AND gradeLevel = ?");
+            params.add(gradeLevel);
+        }
+
+        if (term != null && !term.isEmpty()) {
+            sql.append(" AND curriculumReference = ?");
+            params.add(term);
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND status = ?");
+            params.add(status);
+        }
+
+        if (startDate != null && !startDate.isEmpty()) {
+            sql.append(" AND lessonDate >= ?");
+            params.add(startDate);
+        }
+
+        if (endDate != null && !endDate.isEmpty()) {
+            sql.append(" AND lessonDate <= ?");
+            params.add(endDate);
+        }
+
+        if (keyword != null && !keyword.isEmpty()) {
+            sql.append(" AND (title LIKE ? OR topic LIKE ? OR objectives LIKE ?)");
+            String keywordPattern = "%" + keyword + "%";
+            params.add(keywordPattern);
+            params.add(keywordPattern);
+            params.add(keywordPattern);
+        }
+
+        sql.append(" ORDER BY lessonDate DESC, createdAt DESC");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                plans.add(extractLessonPlan(rs));
+            }
+        } catch (SQLException e) {
+            errorLogger.logError("LessonPlanDAO", "searchLessonPlans", "Error searching lesson plans", e);
+        }
+        return plans;
+    }
+
+    /**
+     * Get distinct subjects for a teacher
+     */
+    public List<String> getDistinctSubjects(String teacherId) {
+        List<String> subjects = new ArrayList<>();
+        String sql = "SELECT DISTINCT subject FROM LessonPlan WHERE teacherId = ? ORDER BY subject";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, teacherId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                subjects.add(rs.getString("subject"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting distinct subjects: " + e.getMessage());
+        }
+        return subjects;
+    }
+
+    /**
+     * Get distinct grade levels for a teacher
+     */
+    public List<String> getDistinctGradeLevels(String teacherId) {
+        List<String> gradeLevels = new ArrayList<>();
+        String sql = "SELECT DISTINCT gradeLevel FROM LessonPlan WHERE teacherId = ? ORDER BY gradeLevel";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, teacherId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                gradeLevels.add(rs.getString("gradeLevel"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting distinct grade levels: " + e.getMessage());
+        }
+        return gradeLevels;
+    }
+
+    /**
+     * Get distinct terms for a teacher
+     */
+    public List<String> getDistinctTerms(String teacherId) {
+        List<String> terms = new ArrayList<>();
+        String sql = "SELECT DISTINCT curriculumReference FROM LessonPlan WHERE teacherId = ? ORDER BY curriculumReference";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, teacherId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                terms.add(rs.getString("curriculumReference"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting distinct terms: " + e.getMessage());
+        }
+        return terms;
+    }
+
     private LessonPlan extractLessonPlan(ResultSet rs) throws SQLException {
         LessonPlan plan = new LessonPlan();
         plan.setLessonPlanId(rs.getString("lessonPlanId"));
@@ -245,7 +381,7 @@ public class LessonPlanDAO {
         plan.setStatus(rs.getString("status"));
         plan.setCreatedAt(rs.getString("createdAt"));
         plan.setUpdatedAt(rs.getString("updatedAt"));
-        
+
         // Extract snapshotId if available
         try {
             plan.setSnapshotId(rs.getString("snapshotId"));
@@ -253,7 +389,15 @@ public class LessonPlanDAO {
             // Column might not exist in older database versions
             plan.setSnapshotId(null);
         }
-        
+
+        // Extract reschedulingNote if available
+        try {
+            plan.setReschedulingNote(rs.getString("reschedulingNote"));
+        } catch (SQLException e) {
+            // Column might not exist in older database versions
+            plan.setReschedulingNote(null);
+        }
+
         return plan;
     }
 }

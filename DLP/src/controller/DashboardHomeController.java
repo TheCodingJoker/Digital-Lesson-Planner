@@ -67,8 +67,6 @@ public class DashboardHomeController {
 
     // Lessons-per-term goal used for the progress bar - matches the reference design's "of 60".
     private static final int LESSONS_GOAL = 60;
-    // End of term/year used for the Teaching Days Left calculation. Adjust to your school calendar.
-    private static final LocalDate TERM_END_DATE = LocalDate.of(LocalDate.now().getYear(), 12, 5);
 
     @FXML
     public void initialize() {
@@ -126,9 +124,8 @@ public class DashboardHomeController {
             lessonsProgressLabel.setText(percent + "% complete");
         }
 
-        // Calculate teaching days remaining
-        List<SchoolEvent> events = schoolEventDAO.getAllSchoolEvents();
-        int teachingDaysLeft = calculateTeachingDaysRemaining(today, TERM_END_DATE, events);
+        // Calculate teaching days remaining using SchedulingEngine
+        int teachingDaysLeft = schedulingEngine.getTeachingDaysRemaining();
         teachingDaysLeftValue.setText(String.valueOf(teachingDaysLeft));
 
         // School events
@@ -480,18 +477,6 @@ public class DashboardHomeController {
         // For now using console output - can be enhanced with proper notifications
     }
 
-    private int countTeachingDaysLeft(LocalDate from, LocalDate to) {
-        int count = 0;
-        LocalDate cursor = from;
-        while (!cursor.isAfter(to)) {
-            if (cursor.getDayOfWeek() != DayOfWeek.SATURDAY && cursor.getDayOfWeek() != DayOfWeek.SUNDAY) {
-                count++;
-            }
-            cursor = cursor.plusDays(1);
-        }
-        return count;
-    }
-
     private boolean isBeforeToday(String isoDate, LocalDate today) {
         if (isoDate == null || isoDate.isEmpty()) return false;
         try {
@@ -527,38 +512,5 @@ public class DashboardHomeController {
             case LessonPlan.STATUS_EXTENDED: return "badge-extended";
             default: return "badge-scheduled";
         }
-    }
-
-    /**
-     * Calculates the number of teaching days remaining between two dates,
-     * excluding weekends and full-day school events.
-     */
-    private int calculateTeachingDaysRemaining(LocalDate startDate, LocalDate endDate, List<SchoolEvent> events) {
-        int teachingDays = 0;
-        LocalDate current = startDate;
-
-        while (!current.isAfter(endDate)) {
-            // Skip weekends
-            if (current.getDayOfWeek() != DayOfWeek.SATURDAY && current.getDayOfWeek() != DayOfWeek.SUNDAY) {
-                // Check if this day is a full-day event
-                final LocalDate currentDate = current;
-                boolean isFullDayEvent = events.stream()
-                    .anyMatch(e -> {
-                        try {
-                            LocalDate eventDate = LocalDate.parse(e.getEventDate());
-                            return eventDate.equals(currentDate) && "FULL_DAY".equals(e.getEventType());
-                        } catch (Exception ex) {
-                            return false;
-                        }
-                    });
-
-                if (!isFullDayEvent) {
-                    teachingDays++;
-                }
-            }
-            current = current.plusDays(1);
-        }
-
-        return teachingDays;
     }
 }

@@ -2,6 +2,9 @@ package controller;
 
 import dao.LessonPlanDAO;
 import dao.UserDAO;
+import dao.ProgressReportDAO;
+import dao.SchoolCalendarDAO;
+import dao.SchoolEventDAO;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -23,6 +26,9 @@ import javafx.stage.Stage;
 import model.LessonPlan;
 import model.TeacherProgress;
 import model.User;
+import model.ProgressReport;
+import model.SchoolCalendar;
+import model.SchoolEvent;
 import util.SessionManager;
 
 import java.util.ArrayList;
@@ -117,6 +123,9 @@ public class PrincipalDashboardController {
 
     private final UserDAO userDAO = new UserDAO();
     private final LessonPlanDAO lessonPlanDAO = new LessonPlanDAO();
+    private final ProgressReportDAO progressReportDAO = new ProgressReportDAO();
+    private final SchoolCalendarDAO schoolCalendarDAO = new SchoolCalendarDAO();
+    private final SchoolEventDAO schoolEventDAO = new SchoolEventDAO();
 
     // =========================================================
     // INITIALIZE
@@ -454,8 +463,36 @@ public class PrincipalDashboardController {
 
     @FXML
     private void showCalendar() {
-        // Navigate to calendar view (to be implemented)
-        showInfo("Calendar View", "School calendar view will be implemented.");
+        // Show school calendar view with events
+        showSchoolCalendarView();
+    }
+
+    private void showSchoolCalendarView() {
+        SchoolCalendar calendar = schoolCalendarDAO.getCurrentOrDefaultCalendar();
+        List<SchoolEvent> events = schoolEventDAO.getAllSchoolEvents();
+
+        StringBuilder content = new StringBuilder();
+        content.append("Academic Year: ").append(calendar.getAcademicYear()).append("\n");
+        content.append("Total Teaching Days: ").append(calendar.getTotalTeachingDays()).append("\n");
+        content.append("Start Date: ").append(calendar.getStartDate()).append("\n");
+        content.append("End Date: ").append(calendar.getEndDate()).append("\n\n");
+        content.append("School Events:\n");
+
+        if (events.isEmpty()) {
+            content.append("No school events scheduled.");
+        } else {
+            for (SchoolEvent event : events) {
+                content.append("- ").append(event.getEventName())
+                      .append(" (").append(event.getEventDate()).append(")")
+                      .append(" [").append(event.getEventType()).append("]\n");
+            }
+        }
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("School Calendar");
+        alert.setHeaderText("Academic Year " + calendar.getAcademicYear());
+        alert.setContentText(content.toString());
+        alert.showAndWait();
     }
 
     @FXML
@@ -471,8 +508,28 @@ public class PrincipalDashboardController {
 
     @FXML
     private void handleExportReport() {
-        // Export functionality (to be implemented with PDF/Word export)
-        showInfo("Export Report", "PDF/Word export functionality will be implemented.");
+        // Generate progress reports for all teachers
+        List<User> teachers = userDAO.getTeachers();
+        int generatedCount = 0;
+
+        for (User teacher : teachers) {
+            // Generate report for current term (or all terms)
+            ProgressReport report = progressReportDAO.generateProgressReport(
+                teacher.getUserId(),
+                null, // All subjects
+                null  // All terms
+            );
+
+            if (report != null) {
+                generatedCount++;
+            }
+        }
+
+        if (generatedCount > 0) {
+            showSuccessMessage("Generated " + generatedCount + " progress reports. PDF/Word export will be implemented.");
+        } else {
+            showErrorMessage("Failed to generate progress reports");
+        }
     }
 
     @FXML

@@ -2,8 +2,14 @@ package service;
 
 import dao.LessonPlanDAO;
 import dao.SchoolEventDAO;
+import dao.SchoolCalendarDAO;
+import dao.NotificationDAO;
+import dao.UserDAO;
 import model.LessonPlan;
 import model.SchoolEvent;
+import model.SchoolCalendar;
+import model.Notification;
+import model.User;
 import util.ErrorLogger;
 
 import java.time.LocalDate;
@@ -11,16 +17,21 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class SchedulingEngine {
-    
+
     private static SchedulingEngine instance;
     private LessonPlanDAO lessonPlanDAO;
     private SchoolEventDAO schoolEventDAO;
+    private SchoolCalendarDAO schoolCalendarDAO;
+    private NotificationDAO notificationDAO;
+    private UserDAO userDAO;
     private ErrorLogger errorLogger;
-    private static final int TOTAL_TEACHING_DAYS = 180;
     
     private SchedulingEngine() {
         this.lessonPlanDAO = new LessonPlanDAO();
         this.schoolEventDAO = new SchoolEventDAO();
+        this.schoolCalendarDAO = new SchoolCalendarDAO();
+        this.notificationDAO = new NotificationDAO();
+        this.userDAO = new UserDAO();
         this.errorLogger = ErrorLogger.getInstance();
     }
     
@@ -90,28 +101,117 @@ public class SchedulingEngine {
         try {
             LessonPlan lesson = lessonPlanDAO.findById(lessonId);
             if (lesson == null) {
-                errorLogger.logWarning("SchedulingEngine", "handleLessonStatusChange", 
+                errorLogger.logWarning("SchedulingEngine", "handleLessonStatusChange",
                     "Lesson not found: " + lessonId);
                 return;
             }
-            
+
             // Update the lesson status
             lesson.setStatus(newStatus);
             lessonPlanDAO.updateStatus(lessonId, newStatus);
-            
+
             // If lesson is incomplete or extended, apply Push-Back Protocol
-            if (LessonPlan.STATUS_INCOMPLETE.equals(newStatus) || 
+            if (LessonPlan.STATUS_INCOMPLETE.equals(newStatus) ||
                 LessonPlan.STATUS_EXTENDED.equals(newStatus)) {
                 applyPushBackProtocol(lesson);
             }
-            
-            errorLogger.logInfo("SchedulingEngine", "handleLessonStatusChange", 
+
+            errorLogger.logInfo("SchedulingEngine", "handleLessonStatusChange",
                 "Lesson status updated: " + lessonId + " -> " + newStatus);
-                
+
         } catch (Exception e) {
-            errorLogger.logError("SchedulingEngine", "handleLessonStatusChange", 
+            errorLogger.logError("SchedulingEngine", "handleLessonStatusChange",
                 "Failed to handle status change for lesson: " + lessonId, e);
         }
+    }
+
+    /**
+     * Apply half-day event constraints - ensure only one lesson on half-days
+     * This should be called after distributing lessons or when events are added
+     */
+    public void applyHalfDayConstraints(int academicYear) {
+        try {
+            List<SchoolEvent> schoolEvents = getSchoolEvents(academicYear);
+            List<SchoolEvent> halfDayEvents = new ArrayList<>();
+
+            // Filter for half-day events
+            for (SchoolEvent event : schoolEvents) {
+                if ("HALF_DAY".equals(event.getEventType())) {
+                    halfDayEvents.add(event);
+                }
+            }
+
+            // For each half-day event, ensure only one lesson is scheduled
+            for (SchoolEvent halfDayEvent : halfDayEvents) {
+                LocalDate eventDate = LocalDate.parse(halfDayEvent.getEventDate());
+
+                // Get all lessons scheduled on this date
+                List<LessonPlan> lessonsOnDate = getLessonsOnDate(eventDate);
+
+                if (lessonsOnDate.size() > 1) {
+                    // Keep only the first lesson, reschedule the rest
+                    LessonPlan firstLesson = lessonsOnDate.get(0);
+                    List<LessonPlan> lessonsToReschedule = lessonsOnDate.subList(1, lessonsOnDate.size());
+
+                    for (LessonPlan lesson : lessonsToReschedule) {
+                        // Reschedule to next available day
+                        LocalDate nextAvailableDay = findNextAvailableTeachingDay(eventDate, schoolEvents);
+
+                        if (nextAvailableDay != null) {
+                            String oldDate = lesson.getLessonDate();
+                            lesson.setLessonDate(nextAvailableDay.format(DateTimeFormatter.ISO_LOCAL_DATE));
+                            lesson.setStatus(LessonPlan.STATUS_RESCHEDULED);
+
+                            // Add rescheduling note
+                            String rescheduleNote = "Rescheduled due to half-day event on " +
+                                eventDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
+                            lesson.setReschedulingNote(rescheduleNote);
+
+                            lessonPlanDAO.updateLessonPlan(lesson);
+
+                            errorLogger.logInfo("SchedulingEngine", "applyHalfDayConstraints",
+                                "Rescheduled lesson " + lesson.getLessonPlanId() + " from " + oldDate +
+                                " to " + lesson.getLessonDate() + " (half-day constraint)");
+                        } else {
+                            // Term boundary reached
+                            errorLogger.logWarning("SchedulingEngine", "applyHalfDayConstraints",
+                                "Term boundary reached - cannot reschedule lesson: " + lesson.getLessonPlanId());
+                            lesson.setStatus("CONSOLIDATION_REQUIRED");
+                            lessonPlanDAO.updateStatus(lesson.getLessonPlanId(), "CONSOLIDATION_REQUIRED");
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            errorLogger.logError("SchedulingEngine", "applyHalfDayConstraints",
+                "Failed to apply half-day constraints", e);
+        }
+    }
+
+    /**
+     * Get all lessons scheduled on a specific date
+     */
+    private List<LessonPlan> getLessonsOnDate(LocalDate date) {
+        List<LessonPlan> allLessons = lessonPlanDAO.getAllLessonPlans();
+        List<LessonPlan> lessonsOnDate = new ArrayList<>();
+
+        String dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+
+        for (LessonPlan lesson : allLessons) {
+            if (dateString.equals(lesson.getLessonDate())) {
+                lessonsOnDate.add(lesson);
+            }
+        }
+
+        // Sort by creation time to ensure consistent ordering
+        lessonsOnDate.sort((a, b) -> {
+            if (a.getCreatedAt() == null) return 1;
+            if (b.getCreatedAt() == null) return -1;
+            return a.getCreatedAt().compareTo(b.getCreatedAt());
+        });
+
+        return lessonsOnDate;
     }
     
     /**
@@ -133,26 +233,27 @@ public class SchedulingEngine {
             
             for (LessonPlan lesson : subsequentLessons) {
                 nextAvailableDate = findNextAvailableTeachingDay(nextAvailableDate, schoolEvents);
-                
+
                 if (nextAvailableDate != null) {
                     String oldDate = lesson.getLessonDate();
                     lesson.setLessonDate(nextAvailableDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
                     lesson.setStatus(LessonPlan.STATUS_RESCHEDULED);
-                    
+
                     // Add rescheduling note
-                    String rescheduleNote = "Rescheduled due to lesson change on " + 
+                    String rescheduleNote = "Rescheduled due to lesson change on " +
                         affectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
-                    
+                    lesson.setReschedulingNote(rescheduleNote);
+
                     lessonPlanDAO.updateLessonPlan(lesson);
-                    
-                    errorLogger.logInfo("SchedulingEngine", "applyPushBackProtocol", 
-                        "Rescheduled lesson " + lesson.getLessonPlanId() + " from " + oldDate + 
+
+                    errorLogger.logInfo("SchedulingEngine", "applyPushBackProtocol",
+                        "Rescheduled lesson " + lesson.getLessonPlanId() + " from " + oldDate +
                         " to " + lesson.getLessonDate());
-                    
+
                     nextAvailableDate = nextAvailableDate.plusDays(1);
                 } else {
                     // Term boundary reached
-                    errorLogger.logWarning("SchedulingEngine", "applyPushBackProtocol", 
+                    errorLogger.logWarning("SchedulingEngine", "applyPushBackProtocol",
                         "Term boundary reached - cannot reschedule lesson: " + lesson.getLessonPlanId());
                     lesson.setStatus("CONSOLIDATION_REQUIRED");
                     lessonPlanDAO.updateStatus(lesson.getLessonPlanId(), "CONSOLIDATION_REQUIRED");
@@ -214,15 +315,19 @@ public class SchedulingEngine {
         List<LocalDate> availableDays = new ArrayList<>();
         LocalDate currentDate = startDate;
         int daysChecked = 0;
-        
-        while (availableDays.size() < TOTAL_TEACHING_DAYS && daysChecked < 365) {
+
+        // Get total teaching days from school calendar
+        SchoolCalendar calendar = schoolCalendarDAO.getCurrentOrDefaultCalendar();
+        int totalTeachingDays = calendar != null ? calendar.getTotalTeachingDays() : 180;
+
+        while (availableDays.size() < totalTeachingDays && daysChecked < 365) {
             if (isAvailableTeachingDay(currentDate, schoolEvents)) {
                 availableDays.add(currentDate);
             }
             currentDate = currentDate.plusDays(1);
             daysChecked++;
         }
-        
+
         return availableDays;
     }
     
@@ -285,7 +390,7 @@ public class SchedulingEngine {
     }
     
     /**
-     * Handle event deletion - check for affected lessons
+     * Handle event deletion - check for affected lessons and notify teachers
      */
     public void handleEventDeletion(String eventId) {
         try {
@@ -293,20 +398,66 @@ public class SchedulingEngine {
             if (deletedEvent == null) {
                 return;
             }
-            
+
             // Check for lessons that were rescheduled due to this event
             String eventDate = deletedEvent.getEventDate();
             List<LessonPlan> affectedLessons = findLessonsRescheduledDueToEvent(eventDate);
-            
+
             if (!affectedLessons.isEmpty()) {
-                errorLogger.logInfo("SchedulingEngine", "handleEventDeletion", 
+                errorLogger.logInfo("SchedulingEngine", "handleEventDeletion",
                     "Event deletion affected " + affectedLessons.size() + " lessons");
-                // In a real implementation, this would trigger a notification to teachers
+
+                // Notify each teacher whose lessons were affected
+                notifyTeachersAboutEventDeletion(deletedEvent, affectedLessons);
             }
-            
+
         } catch (Exception e) {
-            errorLogger.logError("SchedulingEngine", "handleEventDeletion", 
+            errorLogger.logError("SchedulingEngine", "handleEventDeletion",
                 "Failed to handle event deletion: " + eventId, e);
+        }
+    }
+
+    /**
+     * Notify teachers about event deletion
+     */
+    private void notifyTeachersAboutEventDeletion(SchoolEvent deletedEvent, List<LessonPlan> affectedLessons) {
+        // Group lessons by teacher
+        Map<String, List<LessonPlan>> lessonsByTeacher = new HashMap<>();
+        for (LessonPlan lesson : affectedLessons) {
+            lessonsByTeacher.computeIfAbsent(lesson.getTeacherId(), k -> new ArrayList<>()).add(lesson);
+        }
+
+        // Send notification to each affected teacher
+        for (Map.Entry<String, List<LessonPlan>> entry : lessonsByTeacher.entrySet()) {
+            String teacherId = entry.getKey();
+            List<LessonPlan> teacherLessons = entry.getValue();
+
+            User teacher = userDAO.findById(teacherId);
+            if (teacher == null) continue;
+
+            String notificationId = UUID.randomUUID().toString();
+            String title = "School Event Deleted";
+            String message = String.format(
+                "The event '%s' on %s has been deleted. %d lesson(s) that were previously " +
+                "rescheduled due to this event may need to be moved back to %s.",
+                deletedEvent.getEventName(),
+                deletedEvent.getEventDate(),
+                teacherLessons.size(),
+                deletedEvent.getEventDate()
+            );
+
+            Notification notification = new Notification(
+                notificationId,
+                teacherId,
+                "EVENT_DELETED",
+                title,
+                message,
+                deletedEvent.getEventId()
+            );
+
+            notificationDAO.createNotification(notification);
+            errorLogger.logInfo("SchedulingEngine", "notifyTeachersAboutEventDeletion",
+                "Sent notification to teacher: " + teacher.getUsername());
         }
     }
     
@@ -314,8 +465,57 @@ public class SchedulingEngine {
      * Find lessons that were rescheduled due to a specific event
      */
     private List<LessonPlan> findLessonsRescheduledDueToEvent(String eventDate) {
-        // This would need to search lesson notes for rescheduling references
-        // For now, return empty list as notes aren't fully implemented
-        return new ArrayList<>();
+        List<LessonPlan> affectedLessons = new ArrayList<>();
+        List<LessonPlan> allLessons = lessonPlanDAO.getAllLessonPlans();
+
+        // Search for lessons with rescheduling notes containing the event date
+        for (LessonPlan lesson : allLessons) {
+            String note = lesson.getReschedulingNote();
+            if (note != null && note.contains(eventDate)) {
+                affectedLessons.add(lesson);
+            }
+        }
+
+        return affectedLessons;
+    }
+
+    /**
+     * Calculate the number of teaching days remaining in the academic year
+     * @return Number of teaching days remaining
+     */
+    public int getTeachingDaysRemaining() {
+        try {
+            SchoolCalendar calendar = schoolCalendarDAO.getCurrentOrDefaultCalendar();
+            if (calendar == null) {
+                return 180; // Default fallback
+            }
+
+            LocalDate today = LocalDate.now();
+            LocalDate endDate = LocalDate.parse(calendar.getEndDate());
+
+            if (today.isAfter(endDate)) {
+                return 0;
+            }
+
+            // Get all school events for the current year
+            List<SchoolEvent> schoolEvents = getSchoolEvents(calendar.getAcademicYear());
+
+            // Count available teaching days from today to end date
+            int teachingDaysRemaining = 0;
+            LocalDate currentDate = today;
+
+            while (!currentDate.isAfter(endDate)) {
+                if (isAvailableTeachingDay(currentDate, schoolEvents)) {
+                    teachingDaysRemaining++;
+                }
+                currentDate = currentDate.plusDays(1);
+            }
+
+            return teachingDaysRemaining;
+
+        } catch (Exception e) {
+            errorLogger.logError("SchedulingEngine", "getTeachingDaysRemaining", "Failed to calculate teaching days remaining", e);
+            return 180; // Default fallback
+        }
     }
 }

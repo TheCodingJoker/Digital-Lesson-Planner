@@ -30,6 +30,7 @@ public class LessonPlan implements Serializable {
     private String createdAt;
     private String updatedAt;
     private String snapshotId; // Foreign key to CAPSSnapshot
+    private String reschedulingNote; // Note explaining why lesson was rescheduled
 
     public LessonPlan() {}
 
@@ -83,4 +84,7 @@ public class LessonPlan implements Serializable {
 
     public String getSnapshotId() { return snapshotId; }
     public void setSnapshotId(String snapshotId) { this.snapshotId = snapshotId; }
+
+    public String getReschedulingNote() { return reschedulingNote; }
+    public void setReschedulingNote(String reschedulingNote) { this.reschedulingNote = reschedulingNote; }
 }

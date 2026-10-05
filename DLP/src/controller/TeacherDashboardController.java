@@ -4,6 +4,9 @@ package controller;
 import model.User;
 import util.SessionManager;
 import util.FeedbackDialog;
+import dao.NotificationDAO;
+import model.Notification;
+import service.SchedulingEngine;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -13,12 +16,16 @@ import javafx.scene.control.Label;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
+import java.util.List;
 
 public class TeacherDashboardController {
 
     @FXML private Label userNameLabel;
     @FXML private Button feedbackButton;
     @FXML private Button logoutButton;
+    @FXML private Button notificationButton;
+    @FXML private Label notificationBadge;
+    @FXML private Label teachingDaysRemainingLabel;
 
     @FXML private Button navDashboardButton;
     @FXML private Button navLessonPlansButton;
@@ -26,17 +33,25 @@ public class TeacherDashboardController {
 
     @FXML private StackPane contentArea;
 
+    private NotificationDAO notificationDAO;
+    private SchedulingEngine schedulingEngine;
+
     @FXML
     public void initialize() {
+        notificationDAO = new NotificationDAO();
+        schedulingEngine = SchedulingEngine.getInstance();
+
         User currentUser = SessionManager.getInstance().getCurrentUser();
         // For demo purposes, use "Sarah Smith" to match the reference design
         // In production, you'd use: formatDisplayName(currentUser.getUsername())
-        String displayName = "Sarah Smith"; 
+        String displayName = "Sarah Smith";
         userNameLabel.setText(displayName);
 
         setActiveNav(navDashboardButton);
         loadFragment("/view/fragments/DashboardHomeView.fxml");
         setupActivityMonitoring();
+        updateNotificationBadge();
+        updateTeachingDaysRemaining();
     }
 
     private String formatDisplayName(String username) {
@@ -102,6 +117,89 @@ public class TeacherDashboardController {
     private void handleFeedback() {
         User currentUser = SessionManager.getInstance().getCurrentUser();
         FeedbackDialog.showFeedbackDialog(currentUser);
+    }
+
+    @FXML
+    private void handleNotifications() {
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        if (currentUser == null) return;
+
+        List<Notification> notifications = notificationDAO.getUnreadNotificationsByUser(currentUser.getUserId());
+
+        if (notifications.isEmpty()) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                javafx.scene.control.Alert.AlertType.INFORMATION);
+            alert.setTitle("Notifications");
+            alert.setHeaderText("No new notifications");
+            alert.setContentText("You have no unread notifications.");
+            alert.showAndWait();
+        } else {
+            // Show notifications dialog
+            showNotificationsDialog(notifications, currentUser.getUserId());
+        }
+    }
+
+    private void showNotificationsDialog(List<Notification> notifications, String userId) {
+        javafx.scene.control.Dialog<Void> dialog = new javafx.scene.control.Dialog<>();
+        dialog.setTitle("Notifications");
+        dialog.setHeaderText("You have " + notifications.size() + " unread notification(s)");
+
+        javafx.scene.control.ListView<Notification> listView = new javafx.scene.control.ListView<>();
+        listView.getItems().addAll(notifications);
+
+        listView.setCellFactory(param -> new javafx.scene.control.ListCell<Notification>() {
+            @Override
+            protected void updateItem(Notification notification, boolean empty) {
+                super.updateItem(notification, empty);
+                if (empty || notification == null) {
+                    setText(null);
+                } else {
+                    setText(notification.getTitle() + "\n" + notification.getMessage());
+                    setStyle("-fx-text-fill: black; -fx-font-size: 12px;");
+                }
+            }
+        });
+
+        javafx.scene.layout.VBox vbox = new javafx.scene.layout.VBox(listView);
+        vbox.setPrefSize(500, 300);
+
+        dialog.getDialogPane().setContent(vbox);
+        dialog.getDialogPane().getButtonTypes().addAll(
+            javafx.scene.control.ButtonType.MARK_ALL_READ,
+            javafx.scene.control.ButtonType.CLOSE
+        );
+
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == javafx.scene.control.ButtonType.MARK_ALL_READ) {
+                notificationDAO.markAllAsRead(userId);
+                updateNotificationBadge();
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+    }
+
+    private void updateNotificationBadge() {
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        if (currentUser == null || notificationBadge == null) return;
+
+        List<Notification> unreadNotifications = notificationDAO.getUnreadNotificationsByUser(currentUser.getUserId());
+        int count = unreadNotifications.size();
+
+        if (count > 0) {
+            notificationBadge.setText(String.valueOf(count));
+            notificationBadge.setVisible(true);
+        } else {
+            notificationBadge.setVisible(false);
+        }
+    }
+
+    private void updateTeachingDaysRemaining() {
+        if (teachingDaysRemainingLabel != null) {
+            int daysRemaining = schedulingEngine.getTeachingDaysRemaining();
+            teachingDaysRemainingLabel.setText(String.valueOf(daysRemaining));
+        }
     }
 
     private void setupActivityMonitoring() {
