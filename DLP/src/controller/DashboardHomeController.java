@@ -93,6 +93,7 @@ public class DashboardHomeController {
         String teacherId = currentUser.getUserId();
 
         List<LessonPlan> plans = lessonPlanDAO.findByTeacher(teacherId);
+        List<SchoolEvent> events = schoolEventDAO.getAllSchoolEvents();
         LocalDate today = LocalDate.now();
 
         long completed = plans.stream().filter(p -> LessonPlan.STATUS_COMPLETED.equals(p.getStatus())).count();

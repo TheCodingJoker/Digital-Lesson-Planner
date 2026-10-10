@@ -12,6 +12,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -164,13 +166,16 @@ public class TeacherDashboardController {
         vbox.setPrefSize(500, 300);
 
         dialog.getDialogPane().setContent(vbox);
+
+        // Create custom button types
+        ButtonType markAllReadButtonType = new ButtonType("Mark All as Read", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(
-            javafx.scene.control.ButtonType.MARK_ALL_READ,
-            javafx.scene.control.ButtonType.CLOSE
+            markAllReadButtonType,
+            ButtonType.CLOSE
         );
 
         dialog.setResultConverter(buttonType -> {
-            if (buttonType == javafx.scene.control.ButtonType.MARK_ALL_READ) {
+            if (buttonType == markAllReadButtonType) {
                 notificationDAO.markAllAsRead(userId);
                 updateNotificationBadge();
             }

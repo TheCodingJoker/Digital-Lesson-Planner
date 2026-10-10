@@ -89,7 +89,13 @@
             <classpath>
                 <pathelement path="${dist.jar}"/>
                 <pathelement location="${dist.dir}\\lib\\sqlite-jdbc-3.53.2.0.jar"/>
+                <pathelement location="${dist.dir}\\lib\\argon2-jvm-nolibs-2.12.jar"/>
+                <pathelement location="${dist.dir}\\lib\\jna-5.14.0.jar"/>
                 <pathelement location="${dist.dir}\\lib\\jbcrypt-0.4.jar"/>
+                <pathelement location="${dist.dir}\\lib\\openpdf-2.0.3.jar"/>
+                <pathelement location="${dist.dir}\\lib\\poi-5.2.5.jar"/>
+                <pathelement location="${dist.dir}\\lib\\poi-ooxml-5.2.5.jar"/>
+                <pathelement location="${dist.dir}\\lib\\poi-ooxml-lite-5.2.5.jar"/>
             </classpath>
         </java>
     </target>
@@ -123,7 +129,13 @@
             <classpath>
                 <pathelement path="${dist.jar}"/>
                 <pathelement location="${dist.dir}\\lib\\sqlite-jdbc-3.53.2.0.jar"/>
+                <pathelement location="${dist.dir}\\lib\\argon2-jvm-nolibs-2.12.jar"/>
+                <pathelement location="${dist.dir}\\lib\\jna-5.14.0.jar"/>
                 <pathelement location="${dist.dir}\\lib\\jbcrypt-0.4.jar"/>
+                <pathelement location="${dist.dir}\\lib\\openpdf-2.0.3.jar"/>
+                <pathelement location="${dist.dir}\\lib\\poi-5.2.5.jar"/>
+                <pathelement location="${dist.dir}\\lib\\poi-ooxml-5.2.5.jar"/>
+                <pathelement location="${dist.dir}\\lib\\poi-ooxml-lite-5.2.5.jar"/>
             </classpath>
         </java>
     </target>
@@ -131,8 +143,15 @@
     <!-- Override to manually copy required libraries -->
     <target name="-post-jar">
         <echo message="Copying required libraries to dist/lib"/>
-        <copy file="C:\\Users\\Admin\\Downloads\\sqlite-jdbc-3.53.2.0.jar" todir="${dist.dir}\\lib" failonerror="false"/>
-        <copy file="..\\..\\..\\..\\Downloads\\jbcrypt-0.4.jar" todir="${dist.dir}\\lib" failonerror="false"/>
+        <copy file="lib\\sqlite-jdbc-3.53.2.0.jar" todir="${dist.dir}\\lib" failonerror="false"/>
+        <copy file="lib\\argon2-jvm-nolibs-2.12.jar" todir="${dist.dir}\\lib" failonerror="false"/>
+        <copy file="lib\\jna-5.14.0.jar" todir="${dist.dir}\\lib" failonerror="false"/>
+        <copy file="lib\\jbcrypt-0.4.jar" todir="${dist.dir}\\lib" failonerror="false"/>
+        <copy file="lib\\openpdf-2.0.3.jar" todir="${dist.dir}\\lib" failonerror="false"/>
+        <copy file="lib\\poi-5.2.5.jar" todir="${dist.dir}\\lib" failonerror="false"/>
+        <copy file="lib\\poi-ooxml-5.2.5.jar" todir="${dist.dir}\\lib" failonerror="false"/>
+        <copy file="lib\\poi-ooxml-lite-5.2.5.jar" todir="${dist.dir}\\lib" failonerror="false"/>
+        <copy file="lib\\poi-ooxml-full-5.2.5.jar" todir="${dist.dir}\\lib" failonerror="false"/>
     </target>
     
     <!-- Override JavaFX-specific run targets -->

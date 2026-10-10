@@ -65,6 +65,7 @@ public class UserDAO {
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Error creating user: " + e.getMessage());
+            errorLogger.logError("UserDAO", "createUser", "Error creating user", e);
             return false;
         }
     }
@@ -99,7 +100,7 @@ public class UserDAO {
     }
 
     public boolean updateUser(User user) {
-        String sql = "UPDATE User SET email = ?, role = ?, passwordHash = ? WHERE userId = ?";
+        String sql = "UPDATE User SET email = ?, role = ?, passwordHash = ?, passwordMigrated = ? WHERE userId = ?";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -107,11 +108,30 @@ public class UserDAO {
             pstmt.setString(1, user.getEmail());
             pstmt.setString(2, user.getRole());
             pstmt.setString(3, user.getPasswordHash());
-            pstmt.setString(4, user.getUserId());
+            pstmt.setBoolean(4, user.isPasswordMigrated());
+            pstmt.setString(5, user.getUserId());
             
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Error updating user: " + e.getMessage());
+            errorLogger.logError("UserDAO", "updateUser", "Error updating user", e);
+            return false;
+        }
+    }
+
+    public boolean updatePasswordMigration(String userId, boolean migrated) {
+        String sql = "UPDATE User SET passwordMigrated = ? WHERE userId = ?";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setBoolean(1, migrated);
+            pstmt.setString(2, userId);
+            
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating password migration flag: " + e.getMessage());
+            errorLogger.logError("UserDAO", "updatePasswordMigration", "Error updating password migration flag", e);
             return false;
         }
     }
@@ -143,8 +163,27 @@ public class UserDAO {
             }
         } catch (SQLException e) {
             System.err.println("Error getting teachers: " + e.getMessage());
+            errorLogger.logError("UserDAO", "getTeachers", "Error getting teachers", e);
         }
         return teachers;
     }
-    
+
+    public User findById(String userId) {
+        String sql = "SELECT * FROM User WHERE userId = ?";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+            
+            if (rs.next()) {
+                return extractUser(rs);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error finding user by ID: " + e.getMessage());
+            errorLogger.logError("UserDAO", "findById", "Error finding user by ID", e);
+        }
+        return null;
+    }
 }

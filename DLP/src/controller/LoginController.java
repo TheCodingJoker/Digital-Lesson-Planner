@@ -150,6 +150,5 @@ public class LoginController {
         loginButton.addEventFilter(MouseEvent.MOUSE_CLICKED,
             e -> SessionManager.getInstance().resetInactivityTimer());
     }
-    
-    
 }
+

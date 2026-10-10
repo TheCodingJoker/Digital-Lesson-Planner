@@ -62,6 +62,7 @@ public class MainApp extends Application {
                     "role TEXT NOT NULL, " +
                     "email TEXT UNIQUE NOT NULL, " +
                     "isActive INTEGER DEFAULT 1, " +
+                    "passwordMigrated INTEGER DEFAULT 0, " +
                     "createdAt TEXT DEFAULT (datetime('now','localtime')))");
 
                 stmt.execute("CREATE TABLE IF NOT EXISTS LessonPlan (" +
@@ -88,6 +89,7 @@ public class MainApp extends Application {
                 addColumnIfMissing(stmt, "LessonPlan", "teachingActivities", "TEXT");
                 addColumnIfMissing(stmt, "LessonPlan", "snapshotId", "TEXT");
                 addColumnIfMissing(stmt, "LessonPlan", "reschedulingNote", "TEXT");
+                addColumnIfMissing(stmt, "User", "passwordMigrated", "INTEGER DEFAULT 0");
 
                 stmt.execute("CREATE TABLE IF NOT EXISTS SchoolClass (" +
                     "classId TEXT PRIMARY KEY, " +
@@ -210,6 +212,7 @@ public class MainApp extends Application {
                 "ADMINISTRATOR",
                 "admin@school.co.za"
             );
+            admin.setPasswordMigrated(true); // New users use Argon2
             if (userDAO.createUser(admin)) {
                 System.out.println("Default admin user created (admin/admin123)");
             }
@@ -223,6 +226,7 @@ public class MainApp extends Application {
                 "TEACHER",
                 "teacher@school.co.za"
             );
+            teacher.setPasswordMigrated(true); // New users use Argon2
             userDAO.createUser(teacher);
             System.out.println("Default teacher user created (teacher/teacher123)");
         }
@@ -235,6 +239,7 @@ public class MainApp extends Application {
                 "PRINCIPAL_HOD",
                 "principal@school.co.za"
             );
+            principal.setPasswordMigrated(true); // New users use Argon2
             userDAO.createUser(principal);
             System.out.println("Default principal user created (principal/principal123)");
         }
