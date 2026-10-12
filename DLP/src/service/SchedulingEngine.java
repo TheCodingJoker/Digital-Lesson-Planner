@@ -98,39 +98,53 @@ public class SchedulingEngine {
      * @param newStatus The new status (COMPLETED, INCOMPLETE, EXTENDED)
      * @return whether the status change and any required rescheduling were saved
      */
-    public boolean handleLessonStatusChange(String lessonId, String newStatus) {
+    public StatusChangeResult handleLessonStatusChange(String lessonId, String newStatus) {
+        return handleLessonStatusChange(lessonId, newStatus, Collections.emptySet());
+    }
+
+    public StatusChangeResult handleLessonStatusChange(
+            String lessonId, String newStatus, Set<String> consolidationLessonIds) {
         try {
             LessonPlan lesson = lessonPlanDAO.findById(lessonId);
             if (lesson == null) {
                 errorLogger.logWarning("SchedulingEngine", "handleLessonStatusChange",
                     "Lesson not found: " + lessonId);
-                return false;
+                return StatusChangeResult.failed();
+            }
+
+            PushBackPlan pushBackPlan = null;
+            if (LessonPlan.STATUS_INCOMPLETE.equals(newStatus) ||
+                LessonPlan.STATUS_EXTENDED.equals(newStatus)) {
+                if (lesson.getLessonDate() != null && !lesson.getLessonDate().isEmpty()) {
+                    pushBackPlan = planPushBackProtocol(
+                        lesson, consolidationLessonIds == null
+                            ? Collections.emptySet() : consolidationLessonIds);
+                    if (pushBackPlan.conflictLesson != null) {
+                        return StatusChangeResult.conflict(
+                            pushBackPlan.conflictLesson, pushBackPlan.lastSchoolDay);
+                    }
+                }
             }
 
             if (!lessonPlanDAO.updateStatus(lessonId, newStatus)) {
                 errorLogger.logWarning("SchedulingEngine", "handleLessonStatusChange",
                     "Could not save status for lesson: " + lessonId);
-                return false;
+                return StatusChangeResult.failed();
             }
             lesson.setStatus(newStatus);
 
-            // If lesson is incomplete or extended, apply Push-Back Protocol
-            if (LessonPlan.STATUS_INCOMPLETE.equals(newStatus) ||
-                LessonPlan.STATUS_EXTENDED.equals(newStatus)) {
-                if (lesson.getLessonDate() != null && !lesson.getLessonDate().isEmpty()
-                        && !applyPushBackProtocol(lesson)) {
-                    return false;
-                }
+            if (pushBackPlan != null && !savePushBackPlan(pushBackPlan, lesson)) {
+                return StatusChangeResult.failed();
             }
 
             errorLogger.logInfo("SchedulingEngine", "handleLessonStatusChange",
                 "Lesson status updated: " + lessonId + " -> " + newStatus);
-            return true;
+            return StatusChangeResult.success();
 
         } catch (Exception e) {
             errorLogger.logError("SchedulingEngine", "handleLessonStatusChange",
                 "Failed to handle status change for lesson: " + lessonId, e);
-            return false;
+            return StatusChangeResult.failed();
         }
     }
 
@@ -185,8 +199,9 @@ public class SchedulingEngine {
                             // Term boundary reached
                             errorLogger.logWarning("SchedulingEngine", "applyHalfDayConstraints",
                                 "Term boundary reached - cannot reschedule lesson: " + lesson.getLessonPlanId());
-                            lesson.setStatus("CONSOLIDATION_REQUIRED");
-                            lessonPlanDAO.updateStatus(lesson.getLessonPlanId(), "CONSOLIDATION_REQUIRED");
+                            lesson.setStatus(LessonPlan.STATUS_CONSOLIDATION_REQUIRED);
+                            lessonPlanDAO.updateStatus(
+                                lesson.getLessonPlanId(), LessonPlan.STATUS_CONSOLIDATION_REQUIRED);
                         }
                     }
                 }
@@ -226,7 +241,8 @@ public class SchedulingEngine {
     /**
      * Apply Push-Back Protocol - reschedule subsequent lessons
      */
-    private boolean applyPushBackProtocol(LessonPlan affectedLesson) {
+    private PushBackPlan planPushBackProtocol(
+            LessonPlan affectedLesson, Set<String> consolidationLessonIds) {
         try {
             String teacherId = affectedLesson.getTeacherId();
             LocalDate affectedDate = LocalDate.parse(affectedLesson.getLessonDate());
@@ -248,55 +264,74 @@ public class SchedulingEngine {
                 }
             }
 
+            SchoolCalendar calendar = schoolCalendarDAO.getSchoolCalendarByYear(affectedDate.getYear());
+            LocalDate lastSchoolDay = calendar == null || calendar.getEndDate() == null
+                ? null : LocalDate.parse(calendar.getEndDate());
+            PushBackPlan plan = new PushBackPlan(lastSchoolDay);
+            LocalDate nextEarliestDate = affectedDate.plusDays(1);
+
             for (LessonPlan lesson : subsequentLessons) {
                 LocalDate oldDate = LocalDate.parse(lesson.getLessonDate());
-                LocalDate earliestDate = oldDate.isAfter(affectedDate)
-                    ? oldDate.plusDays(1) : affectedDate.plusDays(1);
+                LocalDate earliestDate = oldDate.plusDays(1).isAfter(nextEarliestDate)
+                    ? oldDate.plusDays(1) : nextEarliestDate;
                 LocalDate nextAvailableDate = findNextAvailableTeachingDay(
-                    earliestDate, schoolEvents, occupiedDates);
+                    earliestDate, schoolEvents, occupiedDates, lastSchoolDay);
 
                 if (nextAvailableDate != null) {
-                    lesson.setLessonDate(nextAvailableDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
-                    lesson.setStatus(LessonPlan.STATUS_RESCHEDULED);
-
-                    appendReschedulingNote(lesson,
-                        "Rescheduled from " + oldDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
-                            + " to " + lesson.getLessonDate()
-                            + " because lesson on " + affectedDate
-                            + " was marked " + affectedLesson.getStatus() + ".");
-
-                    if (!lessonPlanDAO.updateLessonPlan(lesson)) {
-                        errorLogger.logError("SchedulingEngine", "applyPushBackProtocol",
-                            "Could not save rescheduled lesson: " + lesson.getLessonPlanId(), null);
-                        return false;
-                    }
+                    plan.moves.add(new LessonMove(lesson, oldDate, nextAvailableDate));
                     occupiedDates.add(nextAvailableDate);
-
-                    errorLogger.logInfo("SchedulingEngine", "applyPushBackProtocol",
-                        "Rescheduled lesson " + lesson.getLessonPlanId() + " from "
-                            + oldDate.format(DateTimeFormatter.ISO_LOCAL_DATE) +
-                        " to " + lesson.getLessonDate());
+                    nextEarliestDate = nextAvailableDate.plusDays(1);
                 } else {
-                    errorLogger.logWarning("SchedulingEngine", "applyPushBackProtocol",
-                        "No available teaching day found within one year for lesson: "
-                            + lesson.getLessonPlanId());
-                    lesson.setStatus("CONSOLIDATION_REQUIRED");
-                    if (!lessonPlanDAO.updateStatus(
-                            lesson.getLessonPlanId(), "CONSOLIDATION_REQUIRED")) {
-                        errorLogger.logError("SchedulingEngine", "applyPushBackProtocol",
-                            "Could not save consolidation status for lesson: "
-                                + lesson.getLessonPlanId(), null);
+                    if (!consolidationLessonIds.contains(lesson.getLessonPlanId())) {
+                        plan.conflictLesson = lesson;
+                        return plan;
                     }
-                    return false;
+                    plan.consolidations.add(lesson);
+                    appendReschedulingNote(lesson,
+                        "Marked for consolidation because it cannot be scheduled by "
+                            + (lastSchoolDay == null ? "the end of the school year"
+                                : lastSchoolDay.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                            + " after lesson on "
+                            + affectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                            + " was marked " + affectedLesson.getStatus() + ".");
+                    nextEarliestDate = oldDate.plusDays(1);
                 }
             }
 
-            return true;
+            return plan;
         } catch (Exception e) {
-            errorLogger.logError("SchedulingEngine", "applyPushBackProtocol", 
-                "Failed to apply push-back protocol", e);
-            return false;
+            errorLogger.logError("SchedulingEngine", "planPushBackProtocol",
+                "Failed to plan push-back schedule", e);
+            throw e;
         }
+    }
+
+    private boolean savePushBackPlan(PushBackPlan plan, LessonPlan affectedLesson) {
+        for (LessonMove move : plan.moves) {
+            LessonPlan lesson = move.lesson;
+            lesson.setLessonDate(move.newDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+            lesson.setStatus(LessonPlan.STATUS_RESCHEDULED);
+            appendReschedulingNote(lesson,
+                "Rescheduled from " + move.oldDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                    + " to " + lesson.getLessonDate()
+                    + " because lesson on " + affectedLesson.getLessonDate()
+                    + " was marked " + affectedLesson.getStatus() + ".");
+            if (!lessonPlanDAO.updateLessonPlan(lesson)) {
+                errorLogger.logError("SchedulingEngine", "savePushBackPlan",
+                    "Could not save rescheduled lesson: " + lesson.getLessonPlanId(), null);
+                return false;
+            }
+        }
+
+        for (LessonPlan lesson : plan.consolidations) {
+            lesson.setStatus(LessonPlan.STATUS_CONSOLIDATION_REQUIRED);
+            if (!lessonPlanDAO.updateLessonPlan(lesson)) {
+                errorLogger.logError("SchedulingEngine", "savePushBackPlan",
+                    "Could not mark lesson for consolidation: " + lesson.getLessonPlanId(), null);
+                return false;
+            }
+        }
+        return true;
     }
 
     private void appendReschedulingNote(LessonPlan lesson, String note) {
@@ -310,15 +345,26 @@ public class SchedulingEngine {
      * Find the next available teaching day considering school events
      */
     private LocalDate findNextAvailableTeachingDay(LocalDate startDate, List<SchoolEvent> schoolEvents) {
-        return findNextAvailableTeachingDay(startDate, schoolEvents, Collections.emptySet());
+        return findNextAvailableTeachingDay(startDate, schoolEvents, Collections.emptySet(), null);
     }
 
     private LocalDate findNextAvailableTeachingDay(
             LocalDate startDate, List<SchoolEvent> schoolEvents, Set<LocalDate> occupiedDates) {
+        return findNextAvailableTeachingDay(startDate, schoolEvents, occupiedDates, null);
+    }
+
+    private LocalDate findNextAvailableTeachingDay(
+            LocalDate startDate,
+            List<SchoolEvent> schoolEvents,
+            Set<LocalDate> occupiedDates,
+            LocalDate lastSchoolDay) {
         LocalDate currentDate = startDate;
         int maxDaysToCheck = 365; // Search up to one year ahead
         
         for (int i = 0; i < maxDaysToCheck; i++) {
+            if (lastSchoolDay != null && currentDate.isAfter(lastSchoolDay)) {
+                return null;
+            }
             if (!occupiedDates.contains(currentDate)
                     && isAvailableTeachingDay(currentDate, schoolEvents)) {
                 return currentDate;
@@ -327,6 +373,68 @@ public class SchedulingEngine {
         }
         
         return null; // No available day found within limit
+    }
+
+    private static final class LessonMove {
+        private final LessonPlan lesson;
+        private final LocalDate oldDate;
+        private final LocalDate newDate;
+
+        private LessonMove(LessonPlan lesson, LocalDate oldDate, LocalDate newDate) {
+            this.lesson = lesson;
+            this.oldDate = oldDate;
+            this.newDate = newDate;
+        }
+    }
+
+    private static final class PushBackPlan {
+        private final LocalDate lastSchoolDay;
+        private final List<LessonMove> moves = new ArrayList<>();
+        private final List<LessonPlan> consolidations = new ArrayList<>();
+        private LessonPlan conflictLesson;
+
+        private PushBackPlan(LocalDate lastSchoolDay) {
+            this.lastSchoolDay = lastSchoolDay;
+        }
+    }
+
+    public static final class StatusChangeResult {
+        private final boolean successful;
+        private final boolean cancelled;
+        private final LessonPlan conflictLesson;
+        private final LocalDate lastSchoolDay;
+
+        private StatusChangeResult(
+                boolean successful, boolean cancelled, LessonPlan conflictLesson,
+                LocalDate lastSchoolDay) {
+            this.successful = successful;
+            this.cancelled = cancelled;
+            this.conflictLesson = conflictLesson;
+            this.lastSchoolDay = lastSchoolDay;
+        }
+
+        private static StatusChangeResult success() {
+            return new StatusChangeResult(true, false, null, null);
+        }
+
+        private static StatusChangeResult failed() {
+            return new StatusChangeResult(false, false, null, null);
+        }
+
+        public static StatusChangeResult cancelled() {
+            return new StatusChangeResult(false, true, null, null);
+        }
+
+        private static StatusChangeResult conflict(
+                LessonPlan lesson, LocalDate lastSchoolDay) {
+            return new StatusChangeResult(false, false, lesson, lastSchoolDay);
+        }
+
+        public boolean isSuccessful() { return successful; }
+        public boolean isCancelled() { return cancelled; }
+        public boolean requiresConsolidation() { return conflictLesson != null; }
+        public LessonPlan getConflictLesson() { return conflictLesson; }
+        public LocalDate getLastSchoolDay() { return lastSchoolDay; }
     }
     
     /**

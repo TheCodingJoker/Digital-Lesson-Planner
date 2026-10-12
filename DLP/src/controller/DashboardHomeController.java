@@ -32,8 +32,10 @@ import java.io.IOException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -311,12 +313,12 @@ public class DashboardHomeController {
     private void markAsComplete(LessonPlan lessonPlan) {
         if (lessonPlan == null) return;
         
-        boolean success = schedulingEngine.handleLessonStatusChange(
-            lessonPlan.getLessonPlanId(), LessonPlan.STATUS_COMPLETED);
-        if (success) {
+        SchedulingEngine.StatusChangeResult result = changeStatusWithConflictPrompt(
+            lessonPlan, LessonPlan.STATUS_COMPLETED);
+        if (result.isSuccessful()) {
             showSuccessMessage("Lesson marked as complete!");
             loadDashboardData();
-        } else {
+        } else if (!result.isCancelled()) {
             showErrorMessage("Failed to mark lesson as complete.");
         }
     }
@@ -324,12 +326,12 @@ public class DashboardHomeController {
     private void extendLesson(LessonPlan lessonPlan) {
         if (lessonPlan == null) return;
         
-        boolean success = schedulingEngine.handleLessonStatusChange(
-            lessonPlan.getLessonPlanId(), LessonPlan.STATUS_EXTENDED);
-        if (success) {
+        SchedulingEngine.StatusChangeResult result = changeStatusWithConflictPrompt(
+            lessonPlan, LessonPlan.STATUS_EXTENDED);
+        if (result.isSuccessful()) {
             showSuccessMessage("Lesson extended! Subsequent lessons will be rescheduled.");
             loadDashboardData();
-        } else {
+        } else if (!result.isCancelled()) {
             showErrorMessage("Failed to extend lesson.");
         }
     }
@@ -337,14 +339,46 @@ public class DashboardHomeController {
     private void markAsIncomplete(LessonPlan lessonPlan) {
         if (lessonPlan == null) return;
 
-        boolean success = schedulingEngine.handleLessonStatusChange(
-            lessonPlan.getLessonPlanId(), LessonPlan.STATUS_INCOMPLETE);
-        if (success) {
+        SchedulingEngine.StatusChangeResult result = changeStatusWithConflictPrompt(
+            lessonPlan, LessonPlan.STATUS_INCOMPLETE);
+        if (result.isSuccessful()) {
             showSuccessMessage("Lesson marked incomplete. Subsequent lessons were rescheduled.");
             loadDashboardData();
-        } else {
+        } else if (!result.isCancelled()) {
             showErrorMessage("The lesson could not be marked incomplete or the remaining lessons "
                 + "could not be fully rescheduled.");
+        }
+    }
+
+    private SchedulingEngine.StatusChangeResult changeStatusWithConflictPrompt(
+            LessonPlan lessonPlan, String newStatus) {
+        Set<String> consolidationLessonIds = new HashSet<>();
+
+        while (true) {
+            SchedulingEngine.StatusChangeResult result = schedulingEngine.handleLessonStatusChange(
+                lessonPlan.getLessonPlanId(), newStatus, consolidationLessonIds);
+            if (!result.requiresConsolidation()) {
+                return result;
+            }
+
+            LessonPlan conflictLesson = result.getConflictLesson();
+            String lastSchoolDay = result.getLastSchoolDay() == null
+                ? "the configured school year end" : result.getLastSchoolDay().toString();
+            ButtonType consolidateButton = new ButtonType(
+                "Mark for consolidation", ButtonType.OK.getButtonData());
+            Alert warning = new Alert(Alert.AlertType.WARNING);
+            warning.setTitle("Rescheduling Conflict");
+            warning.setHeaderText("Lesson cannot fit before the last school day");
+            warning.setContentText("\"" + conflictLesson.getTitle() + "\" cannot be moved "
+                + "to a teaching day on or before " + lastSchoolDay + ". "
+                + "Mark this content for consolidation?");
+            warning.getButtonTypes().setAll(consolidateButton, ButtonType.CANCEL);
+
+            Optional<ButtonType> response = warning.showAndWait();
+            if (response.isEmpty() || response.get() != consolidateButton) {
+                return SchedulingEngine.StatusChangeResult.cancelled();
+            }
+            consolidationLessonIds.add(conflictLesson.getLessonPlanId());
         }
     }
 
@@ -486,6 +520,7 @@ public class DashboardHomeController {
             case LessonPlan.STATUS_EXTENDED: return "extended";
             case LessonPlan.STATUS_INCOMPLETE: return "incomplete";
             case LessonPlan.STATUS_RESCHEDULED: return "rescheduled";
+            case LessonPlan.STATUS_CONSOLIDATION_REQUIRED: return "consolidation required";
             default: return "scheduled";
         }
     }

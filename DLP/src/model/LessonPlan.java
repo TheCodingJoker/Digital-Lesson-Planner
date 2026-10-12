@@ -12,6 +12,7 @@ public class LessonPlan implements Serializable {
     public static final String STATUS_EXTENDED = "EXTENDED";
     public static final String STATUS_INCOMPLETE = "INCOMPLETE";
     public static final String STATUS_RESCHEDULED = "RESCHEDULED";
+    public static final String STATUS_CONSOLIDATION_REQUIRED = "CONSOLIDATION_REQUIRED";
 
     private String lessonPlanId;
     private String teacherId;

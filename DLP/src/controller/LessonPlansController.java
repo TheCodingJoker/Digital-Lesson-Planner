@@ -16,8 +16,10 @@ import javafx.util.Callback;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class LessonPlansController {
 
@@ -90,7 +92,8 @@ public class LessonPlansController {
         filterGradeCombo.getSelectionModel().selectFirst();
 
         filterStatusCombo.setItems(FXCollections.observableArrayList(
-            "All Status", "Scheduled", "Completed", "Extended", "Incomplete", "Rescheduled"));
+            "All Status", "Scheduled", "Completed", "Extended", "Incomplete", "Rescheduled",
+            "Consolidation Required"));
         filterStatusCombo.getSelectionModel().selectFirst();
 
         // Enable real-time search
@@ -229,12 +232,45 @@ public class LessonPlansController {
     }
 
     private void handleMarkStatus(LessonPlan plan, String newStatus) {
-        if (SchedulingEngine.getInstance().handleLessonStatusChange(
-                plan.getLessonPlanId(), newStatus)) {
+        SchedulingEngine.StatusChangeResult result = changeStatusWithConflictPrompt(plan, newStatus);
+        if (result.isSuccessful()) {
             loadLessonPlans();
-        } else {
+        } else if (!result.isCancelled()) {
             showError("The lesson status could not be saved or the remaining lessons "
                 + "could not be fully rescheduled. Check the lesson dates and try again.");
+        }
+    }
+
+    private SchedulingEngine.StatusChangeResult changeStatusWithConflictPrompt(
+            LessonPlan plan, String newStatus) {
+        Set<String> consolidationLessonIds = new HashSet<>();
+        SchedulingEngine schedulingEngine = SchedulingEngine.getInstance();
+
+        while (true) {
+            SchedulingEngine.StatusChangeResult result = schedulingEngine.handleLessonStatusChange(
+                plan.getLessonPlanId(), newStatus, consolidationLessonIds);
+            if (!result.requiresConsolidation()) {
+                return result;
+            }
+
+            LessonPlan conflictLesson = result.getConflictLesson();
+            String lastSchoolDay = result.getLastSchoolDay() == null
+                ? "the configured school year end" : result.getLastSchoolDay().toString();
+            ButtonType consolidateButton = new ButtonType(
+                "Mark for consolidation", ButtonBar.ButtonData.OK_DONE);
+            Alert warning = new Alert(Alert.AlertType.WARNING);
+            warning.setTitle("Rescheduling Conflict");
+            warning.setHeaderText("Lesson cannot fit before the last school day");
+            warning.setContentText("\"" + conflictLesson.getTitle() + "\" cannot be moved "
+                + "to a teaching day on or before " + lastSchoolDay + ". "
+                + "Mark this content for consolidation?");
+            warning.getButtonTypes().setAll(consolidateButton, ButtonType.CANCEL);
+
+            Optional<ButtonType> response = warning.showAndWait();
+            if (response.isEmpty() || response.get() != consolidateButton) {
+                return SchedulingEngine.StatusChangeResult.cancelled();
+            }
+            consolidationLessonIds.add(conflictLesson.getLessonPlanId());
         }
     }
 
@@ -316,6 +352,7 @@ public class LessonPlansController {
             case LessonPlan.STATUS_EXTENDED: return "Extended";
             case LessonPlan.STATUS_INCOMPLETE: return "Incomplete";
             case LessonPlan.STATUS_RESCHEDULED: return "Rescheduled";
+            case LessonPlan.STATUS_CONSOLIDATION_REQUIRED: return "Consolidation Required";
             default: return "Scheduled";
         }
     }
@@ -327,6 +364,7 @@ public class LessonPlansController {
             case "Extended": return LessonPlan.STATUS_EXTENDED;
             case "Incomplete": return LessonPlan.STATUS_INCOMPLETE;
             case "Rescheduled": return LessonPlan.STATUS_RESCHEDULED;
+            case "Consolidation Required": return LessonPlan.STATUS_CONSOLIDATION_REQUIRED;
             default: return LessonPlan.STATUS_SCHEDULED;
         }
     }
