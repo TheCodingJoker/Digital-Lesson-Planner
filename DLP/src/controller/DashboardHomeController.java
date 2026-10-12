@@ -71,9 +71,11 @@ public class DashboardHomeController {
     @FXML
     public void initialize() {
         User currentUser = SessionManager.getInstance().getCurrentUser();
-        // For demo purposes, use "Sarah Smith" to match the reference design
-        // In production, you'd use: formatDisplayName(currentUser.getUsername())
-        String name = "Sarah Smith";
+        if (currentUser == null) {
+            welcomeLabel.setText("Welcome!");
+            return;
+        }
+        String name = formatDisplayName(currentUser.getUsername());
         welcomeLabel.setText("Welcome back, " + name + "!");
 
         loadDashboardData();
@@ -81,9 +83,10 @@ public class DashboardHomeController {
 
     private String formatDisplayName(String username) {
         if (username == null || username.isEmpty()) return "Teacher";
-        // For demo purposes, convert username to a more display-friendly format
-        // In a real app, you'd have a proper firstName/lastName field
-        String formatted = username.substring(0, 1).toUpperCase() + username.substring(1).toLowerCase();
+        // Convert username to a more display-friendly format
+        String formatted = username.length() > 1
+            ? username.substring(0, 1).toUpperCase() + username.substring(1).toLowerCase()
+            : username.toUpperCase();
         return formatted.replace("_", " ");
     }
 
@@ -111,19 +114,10 @@ public class DashboardHomeController {
         inProgressValue.setText(String.valueOf(inProgress));
         behindScheduleValue.setText(String.valueOf(behindSchedule));
 
-        // Use sample data from the reference design for demonstration
-        if (completed == 0) {
-            lessonsCompletedValue.setText("42");
-            int samplePercent = 70;
-            lessonsProgressFill.setPrefWidth((int)(200.0 * samplePercent / 100)); // track is 200px wide
-            lessonsProgressLabel.setText(samplePercent + "% complete");
-            inProgressValue.setText("8");
-            behindScheduleValue.setText("3");
-        } else {
-            int percent = LESSONS_GOAL == 0 ? 0 : Math.min(100, Math.round((completed * 100f) / LESSONS_GOAL));
-            lessonsProgressFill.setPrefWidth((int)(200.0 * percent / 100)); // track is 200px wide
-            lessonsProgressLabel.setText(percent + "% complete");
-        }
+        // Calculate progress percentage based on actual data
+        int percent = LESSONS_GOAL == 0 ? 0 : Math.min(100, Math.round((completed * 100f) / LESSONS_GOAL));
+        lessonsProgressFill.setPrefWidth((int)(200.0 * percent / 100)); // track is 200px wide
+        lessonsProgressLabel.setText(percent + "% complete");
 
         // Calculate teaching days remaining using SchedulingEngine
         int teachingDaysLeft = schedulingEngine.getTeachingDaysRemaining();
@@ -162,13 +156,13 @@ public class DashboardHomeController {
             .filter(p -> p.getLessonDate() != null && !isBeforeToday(p.getLessonDate(), today))
             .sorted((a, b) -> a.getLessonDate().compareTo(b.getLessonDate()))
             .limit(5)
-            .toList(), true, true);
+            .toList(), true, false);
 
         renderLessonRows(recentLessonsBox, plans.stream()
             .filter(p -> p.getLessonDate() != null && isBeforeToday(p.getLessonDate(), today.plusDays(1)))
             .sorted((a, b) -> b.getLessonDate().compareTo(a.getLessonDate()))
             .limit(5)
-            .toList(), false, true);
+            .toList(), false, false);
     }
 
     @FXML
@@ -226,47 +220,19 @@ public class DashboardHomeController {
     }
 
     private void renderLessonRows(VBox container, List<LessonPlan> plans, boolean showLongDate, boolean useSampleData) {
+        // useSampleData parameter is deprecated - always use real database data
         container.getChildren().clear();
 
-        if (plans.isEmpty() && !useSampleData) {
+        if (plans.isEmpty()) {
             Label empty = new Label("Nothing to show here yet.");
             empty.getStyleClass().add("lesson-row-empty");
             container.getChildren().add(empty);
             return;
         }
 
-        // Use sample data from reference design if no real data available
-        if (plans.isEmpty() && useSampleData) {
-            if (showLongDate) {
-                // Sample upcoming lessons
-                String[] sampleTitles = {"Algebra: Linear Equations", "Photosynthesis Process", "South African History"};
-                String[] sampleSubjects = {"Mathematics", "Natural Sciences", "Social Sciences"};
-                String[] sampleGrades = {"Grade 10", "Grade 11", "Grade 9"};
-                String[] sampleDates = {"Monday, 12 September 2026", "Tuesday, 13 September 2026", "Wednesday, 14 September 2026"};
-                
-                for (int i = 0; i < sampleTitles.length; i++) {
-                    LessonPlan samplePlan = createSampleLessonPlan(sampleTitles[i], sampleSubjects[i], sampleGrades[i], "scheduled");
-                    createLessonRow(container, sampleTitles[i], sampleSubjects[i], sampleGrades[i], sampleDates[i], "scheduled", samplePlan);
-                }
-            } else {
-                // Sample recent lessons
-                String[] sampleTitles = {"Quadratic Functions", "Cell Division", "Poetry Analysis"};
-                String[] sampleSubjects = {"Mathematics", "Life Sciences", "English"};
-                String[] sampleGrades = {"Grade 10", "Grade 11", "Grade 12"};
-                String[] sampleDates = {"2026/09/01", "2026/08/31", "2026/08/30"};
-                String[] sampleStatuses = {"completed", "extended", "completed"};
-                
-                for (int i = 0; i < sampleTitles.length; i++) {
-                    LessonPlan samplePlan = createSampleLessonPlan(sampleTitles[i], sampleSubjects[i], sampleGrades[i], sampleStatuses[i]);
-                    createLessonRow(container, sampleTitles[i], sampleSubjects[i], sampleGrades[i], sampleDates[i], sampleStatuses[i], samplePlan);
-                }
-            }
-            return;
-        }
-
         for (int i = 0; i < plans.size(); i++) {
             LessonPlan plan = plans.get(i);
-            createLessonRow(container, plan.getTitle(), plan.getSubject(), plan.getGradeLevel(), 
+            createLessonRow(container, plan.getTitle(), plan.getSubject(), plan.getGradeLevel(),
                           formatDate(plan.getLessonDate(), showLongDate), displayStatus(plan.getStatus()), plan);
         }
     }
@@ -328,23 +294,6 @@ public class DashboardHomeController {
             case "extended": return "badge-extended";
             default: return "badge-scheduled";
         }
-    }
-
-    private LessonPlan createSampleLessonPlan(String title, String subject, String grade, String status) {
-        LessonPlan plan = new LessonPlan();
-        plan.setLessonPlanId(UUID.randomUUID().toString());
-        plan.setTitle(title);
-        plan.setSubject(subject);
-        plan.setGradeLevel(grade);
-        plan.setStatus(status.toUpperCase());
-        plan.setTopic(title);
-        plan.setDurationMinutes(60);
-        plan.setObjectives("Sample learning objectives for demonstration purposes");
-        plan.setTeachingActivities("Sample teaching activities for demonstration purposes");
-        plan.setAssessmentMethod("Sample assessment method for demonstration purposes");
-        plan.setResources("Sample resources for demonstration purposes");
-        plan.setLessonDate(LocalDate.now().toString());
-        return plan;
     }
 
     private void markAsComplete(LessonPlan lessonPlan) {
@@ -503,15 +452,6 @@ public class DashboardHomeController {
             case LessonPlan.STATUS_COMPLETED: return "completed";
             case LessonPlan.STATUS_EXTENDED: return "extended";
             default: return "scheduled";
-        }
-    }
-
-    private String statusBadgeClass(String status) {
-        if (status == null) return "badge-scheduled";
-        switch (status) {
-            case LessonPlan.STATUS_COMPLETED: return "badge-completed";
-            case LessonPlan.STATUS_EXTENDED: return "badge-extended";
-            default: return "badge-scheduled";
         }
     }
 }

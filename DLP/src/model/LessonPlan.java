@@ -15,7 +15,7 @@ public class LessonPlan implements Serializable {
 
     private String lessonPlanId;
     private String teacherId;
-    private String title;       // mirrors topic - the mockup has no separate title field
+    private String title;       // mirrors topic - the design uses the topic as the display title
     private String subject;
     private String gradeLevel;
     private String term;        // Term 1-4 (stored in the curriculumReference column)

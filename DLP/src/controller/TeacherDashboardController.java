@@ -44,10 +44,12 @@ public class TeacherDashboardController {
         schedulingEngine = SchedulingEngine.getInstance();
 
         User currentUser = SessionManager.getInstance().getCurrentUser();
-        // For demo purposes, use "Sarah Smith" to match the reference design
-        // In production, you'd use: formatDisplayName(currentUser.getUsername())
-        String displayName = "Sarah Smith";
-        userNameLabel.setText(displayName);
+        if (currentUser == null) {
+            userNameLabel.setText("Teacher");
+        } else {
+            String displayName = formatDisplayName(currentUser.getUsername());
+            userNameLabel.setText(displayName);
+        }
 
         setActiveNav(navDashboardButton);
         loadFragment("/view/fragments/DashboardHomeView.fxml");
@@ -59,7 +61,9 @@ public class TeacherDashboardController {
     private String formatDisplayName(String username) {
         if (username == null || username.isEmpty()) return "Teacher";
         // Capitalize first letter and replace underscores with spaces for better display
-        String formatted = username.substring(0, 1).toUpperCase() + username.substring(1).toLowerCase();
+        String formatted = username.length() > 1
+            ? username.substring(0, 1).toUpperCase() + username.substring(1).toLowerCase()
+            : username.toUpperCase();
         return formatted.replace("_", " ");
     }
 

@@ -85,7 +85,11 @@ public class AdminDashboardController {
     @FXML
     public void initialize() {
         currentUser = SessionManager.getInstance().getCurrentUser();
-        userNameLabel.setText(currentUser != null ? currentUser.getUsername() : "Admin");
+        if (currentUser != null && userNameLabel != null) {
+            userNameLabel.setText(currentUser.getUsername());
+        } else if (userNameLabel != null) {
+            userNameLabel.setText("Admin");
+        }
 
         setupUserTable();
         setupCAPSTable();

@@ -9,6 +9,7 @@ public class User {
     private String role; // ADMINISTRATOR, TEACHER, PRINCIPAL_HOD
     private String email;
     private boolean isActive;
+    private boolean passwordMigrated; // True if password has been migrated to Argon2
     private String createdAt;
     
     public User() {}
@@ -78,6 +79,14 @@ public class User {
 
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isPasswordMigrated() {
+        return passwordMigrated;
+    }
+
+    public void setPasswordMigrated(boolean passwordMigrated) {
+        this.passwordMigrated = passwordMigrated;
     }
 
 }

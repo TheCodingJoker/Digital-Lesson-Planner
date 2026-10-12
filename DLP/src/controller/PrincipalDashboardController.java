@@ -145,11 +145,12 @@ public class PrincipalDashboardController {
 
     private void loadPrincipalName() {
         try {
-            if (SessionManager.getInstance().getCurrentUser() != null) {
-                String username = SessionManager.getInstance().getCurrentUser().getUsername();
-                if (userNameLabel != null) {
-                    userNameLabel.setText(username);
-                }
+            User currentUser = SessionManager.getInstance().getCurrentUser();
+            if (currentUser != null && userNameLabel != null) {
+                String username = currentUser.getUsername();
+                userNameLabel.setText(username);
+            } else if (userNameLabel != null) {
+                userNameLabel.setText("Principal");
             }
         } catch (Exception e) {
             e.printStackTrace();
