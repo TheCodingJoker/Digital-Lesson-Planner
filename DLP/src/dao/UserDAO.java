@@ -51,17 +51,18 @@ public class UserDAO {
     }
 
     public boolean createUser(User user) {
-        String sql = "INSERT INTO User (userId, username, passwordHash, role, email) VALUES (?, ?, ?, ?, ?)";
-        
+        String sql = "INSERT INTO User (userId, username, passwordHash, role, email, passwordMigrated) VALUES (?, ?, ?, ?, ?, ?)";
+
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setString(1, user.getUserId());
             pstmt.setString(2, user.getUsername());
             pstmt.setString(3, user.getPasswordHash());
             pstmt.setString(4, user.getRole());
             pstmt.setString(5, user.getEmail());
-            
+            pstmt.setBoolean(6, user.isPasswordMigrated());
+
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Error creating user: " + e.getMessage());
@@ -78,6 +79,7 @@ public class UserDAO {
         user.setRole(rs.getString("role"));
         user.setEmail(rs.getString("email"));
         user.setActive(rs.getBoolean("isActive"));
+        user.setPasswordMigrated(rs.getBoolean("passwordMigrated"));
         user.setCreatedAt(rs.getString("createdAt"));
         return user;
     }
