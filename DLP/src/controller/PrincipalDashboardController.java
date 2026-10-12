@@ -193,6 +193,8 @@ public class PrincipalDashboardController {
                 return "On Track";
             case "BEHIND":
                 return "Behind";
+            case "NO_PLANS":
+                return "No Plans";
             default:
                 return status;
         }
@@ -383,7 +385,8 @@ public class PrincipalDashboardController {
 
                 boolean hasExtendedLesson = lessons.stream()
                     .anyMatch(lesson -> LessonPlan.STATUS_EXTENDED.equals(lesson.getStatus()));
-                String status = hasExtendedLesson ? "BEHIND" : "ON_TRACK";
+                String status = totalLessons == 0
+                    ? "NO_PLANS" : hasExtendedLesson ? "BEHIND" : "ON_TRACK";
                 if (hasExtendedLesson) behindCount++;
 
                 if (totalLessons > 0) teachersWithLessons++;
@@ -413,14 +416,14 @@ public class PrincipalDashboardController {
             double averageProgress = teachersWithLessons > 0 ? totalProgress / teachersWithLessons : 0;
             averageProgressLabel.setText(String.format(Locale.ROOT, "%.1f%%", averageProgress));
             
-            int onTrackCount = totalTeachers - behindCount;
+            int onTrackCount = teachersWithLessons - behindCount;
             onTrackLabel.setText(String.valueOf(onTrackCount));
             needSupportLabel.setText(String.valueOf(behindCount));
 
             // Aggregate every teacher's lessons by subject area.
             updateSubjectProgress(allLessons);
             
-            updateTeacherStatusPie(totalTeachers, onTrackCount, behindCount);
+            updateTeacherStatusPie(teachersWithLessons, onTrackCount, behindCount);
 
             // Populate table
             teacherProgressTable.getItems().clear();
@@ -495,18 +498,18 @@ public class PrincipalDashboardController {
         series.getData().add(data);
     }
     
-    private void updateTeacherStatusPie(int totalTeachers, int onTrackCount, int behindCount) {
-        completionBandTotalLabel.setText(String.valueOf(totalTeachers));
+    private void updateTeacherStatusPie(int teachersWithPlans, int onTrackCount, int behindCount) {
+        completionBandTotalLabel.setText(String.valueOf(teachersWithPlans));
         onTrackLegendLabel.setText(formatCompletionLegend(
-            "On Track", onTrackCount, getSharePercent(onTrackCount, totalTeachers)));
+            "On Track", onTrackCount, getSharePercent(onTrackCount, teachersWithPlans)));
         behindLegendLabel.setText(formatCompletionLegend(
-            "Behind", behindCount, getSharePercent(behindCount, totalTeachers)));
+            "Behind", behindCount, getSharePercent(behindCount, teachersWithPlans)));
 
-        completionBandEmptyLabel.setVisible(totalTeachers == 0);
-        completionBandEmptyLabel.setManaged(totalTeachers == 0);
-        completionBandPieChart.setVisible(totalTeachers > 0);
-        completionBandPieChart.setManaged(totalTeachers > 0);
-        if (totalTeachers == 0) {
+        completionBandEmptyLabel.setVisible(teachersWithPlans == 0);
+        completionBandEmptyLabel.setManaged(teachersWithPlans == 0);
+        completionBandPieChart.setVisible(teachersWithPlans > 0);
+        completionBandPieChart.setManaged(teachersWithPlans > 0);
+        if (teachersWithPlans == 0) {
             completionBandPieChart.setData(FXCollections.observableArrayList());
             return;
         }
@@ -518,8 +521,8 @@ public class PrincipalDashboardController {
         completionBandPieChart.setAccessibleText(String.format(
             Locale.ROOT,
             "Teacher status: on track %d percent, behind %d percent",
-            Math.round(getSharePercent(onTrackCount, totalTeachers)),
-            Math.round(getSharePercent(behindCount, totalTeachers))));
+            Math.round(getSharePercent(onTrackCount, teachersWithPlans)),
+            Math.round(getSharePercent(behindCount, teachersWithPlans))));
     }
 
     private double getSharePercent(int count, int total) {

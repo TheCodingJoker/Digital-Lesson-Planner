@@ -95,7 +95,7 @@
                                     <Label text="On Track" styleClass="kpi-label"/>
                                 </HBox>
                                 <Label fx:id="onTrackLabel" text="0" styleClass="kpi-value"/>
-                                <Label text="No extended lessons" styleClass="kpi-caption"/>
+                                <Label text="Among teachers with lesson plans" styleClass="kpi-caption"/>
                             </VBox>
                             <VBox spacing="8" prefHeight="112" maxWidth="Infinity" alignment="CENTER_LEFT"
                                   styleClass="principal-kpi-card, principal-kpi-warning">
@@ -147,7 +147,7 @@
                                         <VBox alignment="CENTER" mouseTransparent="true">
                                             <Label fx:id="completionBandTotalLabel" text="0"
                                                    styleClass="principal-donut-total"/>
-                                            <Label text="TEACHERS" styleClass="principal-donut-caption"/>
+                                            <Label text="WITH PLANS" styleClass="principal-donut-caption"/>
                                         </VBox>
                                         <Label fx:id="completionBandEmptyLabel"
                                                text="No lesson plan data"
