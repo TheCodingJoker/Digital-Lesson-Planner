@@ -54,8 +54,6 @@ public class PrincipalDashboardController {
     @FXML
     private Button navDashboardButton;
     @FXML
-    private Button navTeachersButton;
-    @FXML
     private Button navCalendarButton;
     @FXML
     private Button navReportsButton;
@@ -511,17 +509,6 @@ public class PrincipalDashboardController {
     }
 
     @FXML
-    private void showTeachers() {
-        loadDashboardData();
-        if (!dashboardDataLoaded) return;
-        TableView<TeacherProgress> table = createTeacherTable();
-        VBox page = createPage("Teachers", "Review teaching activity and progress by teacher.");
-        page.getChildren().add(table);
-        VBox.setVgrow(table, Priority.ALWAYS);
-        showPage(page, navTeachersButton);
-    }
-
-    @FXML
     private void showCalendar() {
         try {
             SchoolCalendar calendar = schoolCalendarDAO.getCurrentOrDefaultCalendar();
@@ -642,7 +629,7 @@ public class PrincipalDashboardController {
     }
 
     private void setActiveNavigation(Button activeButton) {
-        for (Button button : List.of(navDashboardButton, navTeachersButton, navCalendarButton, navReportsButton)) {
+        for (Button button : List.of(navDashboardButton, navCalendarButton, navReportsButton)) {
             button.getStyleClass().remove("nav-button-active");
         }
         activeButton.getStyleClass().add("nav-button-active");

@@ -41,7 +41,6 @@ The Digital Lesson Planner (DLP) is a desktop application designed to help South
 ### For Principals
 - Review lesson-completion bands (high: 70%+, moderate: 50% to below 70%, low: below 50%) across active teachers
 - Identify teachers with no lesson plans separately from teachers with low completion
-- Distinguish teachers with no lesson plans from teachers behind schedule
 - View the current academic year's teaching days and school events
 - Export a CSV progress report for all active teachers
 

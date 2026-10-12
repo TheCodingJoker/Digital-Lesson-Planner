@@ -46,8 +46,6 @@
             </padding>
             <Button fx:id="navDashboardButton" text="Dashboard" onAction="#showDashboard"
                     styleClass="nav-button" maxWidth="Infinity"/>
-            <Button fx:id="navTeachersButton" text="Teachers" onAction="#showTeachers"
-                    styleClass="nav-button" maxWidth="Infinity"/>
             <Button fx:id="navCalendarButton" text="Calendar" onAction="#showCalendar"
                     styleClass="nav-button" maxWidth="Infinity"/>
             <Button fx:id="navReportsButton" text="Reports" onAction="#showReports"
