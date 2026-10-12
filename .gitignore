@@ -1,4 +1,4 @@
-# Edit at https://www.toptal.com/developers/gitignore?templates=git,vue,node,flask,linux,macos,react,vuejs,django,python,angular,eclipse,gitbook,pycharm,windows,pycharm+all,pycharm+iml,reactnative,tortoisegit,visualstudio,visualstudiocode,r
+# Digital Lesson Planner - Project-specific .gitignore
 
 # Database files
 *.db
@@ -9,10 +9,34 @@
 DLP/build/
 DLP/dist/
 DLP/nbproject/private/
+DLP/nbproject/private/
 
 # IDE specific
 .idea/
 *.iml
+*.ipr
+*.iws
+
+# NetBeans project private settings (computer-specific)
+nbproject/private/
+nbproject/build-impl.xml
+nbproject/jfx-impl.xml
+
+# User-specific NetBeans configuration
+nbproject/configs/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
 
 ### Angular ###
 ## Angular ##

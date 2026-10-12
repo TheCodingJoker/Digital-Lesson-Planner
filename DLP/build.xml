@@ -82,20 +82,16 @@
     <target name="jfx-run" depends="jar">
         <echo message="Running application as regular Java application"/>
         <java classname="MainApp" fork="true">
-            <jvmarg value="--module-path"/>
-            <jvmarg value="C:\\Users\\Admin\\Downloads\\zulu23.32.11-ca-fx-jdk23.0.2-win_x64\\zulu23.32.11-ca-fx-jdk23.0.2-win_x64\\jmods"/>
-            <jvmarg value="--add-modules"/>
-            <jvmarg value="javafx.controls,javafx.fxml,javafx.graphics"/>
             <classpath>
                 <pathelement path="${dist.jar}"/>
-                <pathelement location="${dist.dir}\\lib\\sqlite-jdbc-3.53.2.0.jar"/>
-                <pathelement location="${dist.dir}\\lib\\argon2-jvm-nolibs-2.12.jar"/>
-                <pathelement location="${dist.dir}\\lib\\jna-5.14.0.jar"/>
-                <pathelement location="${dist.dir}\\lib\\jbcrypt-0.4.jar"/>
-                <pathelement location="${dist.dir}\\lib\\openpdf-2.0.3.jar"/>
-                <pathelement location="${dist.dir}\\lib\\poi-5.2.5.jar"/>
-                <pathelement location="${dist.dir}\\lib\\poi-ooxml-5.2.5.jar"/>
-                <pathelement location="${dist.dir}\\lib\\poi-ooxml-lite-5.2.5.jar"/>
+                <pathelement location="${dist.dir}/lib/sqlite-jdbc-3.53.2.0.jar"/>
+                <pathelement location="${dist.dir}/lib/argon2-jvm-nolibs-2.12.jar"/>
+                <pathelement location="${dist.dir}/lib/jna-5.14.0.jar"/>
+                <pathelement location="${dist.dir}/lib/jbcrypt-0.4.jar"/>
+                <pathelement location="${dist.dir}/lib/openpdf-2.0.3.jar"/>
+                <pathelement location="${dist.dir}/lib/poi-5.2.5.jar"/>
+                <pathelement location="${dist.dir}/lib/poi-ooxml-5.2.5.jar"/>
+                <pathelement location="${dist.dir}/lib/poi-ooxml-lite-5.2.5.jar"/>
             </classpath>
         </java>
     </target>
@@ -119,23 +115,17 @@
     <!-- Override the main run target -->
     <target name="run" depends="jar">
         <echo message="Running application as regular Java application"/>
-        <echo message="Using JDK: ${platforms.JDK_23.home}"/>
-        <java classname="MainApp" fork="true" jvm="${platforms.JDK_23.home}\\bin\\java.exe">
-            <jvmarg value="--module-path"/>
-            <jvmarg value="${platforms.JDK_23.home}\\jmods"/>
-            <jvmarg value="--add-modules"/>
-            <jvmarg value="javafx.controls,javafx.fxml,javafx.graphics"/>
-            <jvmarg value="-Djava.library.path=${platforms.JDK_23.home}\\bin"/>
+        <java classname="MainApp" fork="true">
             <classpath>
                 <pathelement path="${dist.jar}"/>
-                <pathelement location="${dist.dir}\\lib\\sqlite-jdbc-3.53.2.0.jar"/>
-                <pathelement location="${dist.dir}\\lib\\argon2-jvm-nolibs-2.12.jar"/>
-                <pathelement location="${dist.dir}\\lib\\jna-5.14.0.jar"/>
-                <pathelement location="${dist.dir}\\lib\\jbcrypt-0.4.jar"/>
-                <pathelement location="${dist.dir}\\lib\\openpdf-2.0.3.jar"/>
-                <pathelement location="${dist.dir}\\lib\\poi-5.2.5.jar"/>
-                <pathelement location="${dist.dir}\\lib\\poi-ooxml-5.2.5.jar"/>
-                <pathelement location="${dist.dir}\\lib\\poi-ooxml-lite-5.2.5.jar"/>
+                <pathelement location="${dist.dir}/lib/sqlite-jdbc-3.53.2.0.jar"/>
+                <pathelement location="${dist.dir}/lib/argon2-jvm-nolibs-2.12.jar"/>
+                <pathelement location="${dist.dir}/lib/jna-5.14.0.jar"/>
+                <pathelement location="${dist.dir}/lib/jbcrypt-0.4.jar"/>
+                <pathelement location="${dist.dir}/lib/openpdf-2.0.3.jar"/>
+                <pathelement location="${dist.dir}/lib/poi-5.2.5.jar"/>
+                <pathelement location="${dist.dir}/lib/poi-ooxml-5.2.5.jar"/>
+                <pathelement location="${dist.dir}/lib/poi-ooxml-lite-5.2.5.jar"/>
             </classpath>
         </java>
     </target>
@@ -143,15 +133,15 @@
     <!-- Override to manually copy required libraries -->
     <target name="-post-jar">
         <echo message="Copying required libraries to dist/lib"/>
-        <copy file="lib\\sqlite-jdbc-3.53.2.0.jar" todir="${dist.dir}\\lib" failonerror="false"/>
-        <copy file="lib\\argon2-jvm-nolibs-2.12.jar" todir="${dist.dir}\\lib" failonerror="false"/>
-        <copy file="lib\\jna-5.14.0.jar" todir="${dist.dir}\\lib" failonerror="false"/>
-        <copy file="lib\\jbcrypt-0.4.jar" todir="${dist.dir}\\lib" failonerror="false"/>
-        <copy file="lib\\openpdf-2.0.3.jar" todir="${dist.dir}\\lib" failonerror="false"/>
-        <copy file="lib\\poi-5.2.5.jar" todir="${dist.dir}\\lib" failonerror="false"/>
-        <copy file="lib\\poi-ooxml-5.2.5.jar" todir="${dist.dir}\\lib" failonerror="false"/>
-        <copy file="lib\\poi-ooxml-lite-5.2.5.jar" todir="${dist.dir}\\lib" failonerror="false"/>
-        <copy file="lib\\poi-ooxml-full-5.2.5.jar" todir="${dist.dir}\\lib" failonerror="false"/>
+        <copy file="lib/sqlite-jdbc-3.53.2.0.jar" todir="${dist.dir}/lib" failonerror="false"/>
+        <copy file="lib/argon2-jvm-nolibs-2.12.jar" todir="${dist.dir}/lib" failonerror="false"/>
+        <copy file="lib/jna-5.14.0.jar" todir="${dist.dir}/lib" failonerror="false"/>
+        <copy file="lib/jbcrypt-0.4.jar" todir="${dist.dir}/lib" failonerror="false"/>
+        <copy file="lib/openpdf-2.0.3.jar" todir="${dist.dir}/lib" failonerror="false"/>
+        <copy file="lib/poi-5.2.5.jar" todir="${dist.dir}/lib" failonerror="false"/>
+        <copy file="lib/poi-ooxml-5.2.5.jar" todir="${dist.dir}/lib" failonerror="false"/>
+        <copy file="lib/poi-ooxml-lite-5.2.5.jar" todir="${dist.dir}/lib" failonerror="false"/>
+        <copy file="lib/poi-ooxml-full-5.2.5.jar" todir="${dist.dir}/lib" failonerror="false"/>
     </target>
     
     <!-- Override JavaFX-specific run targets -->
