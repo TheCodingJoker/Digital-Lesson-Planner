@@ -105,7 +105,7 @@ public class DashboardHomeController {
             .filter(p -> today.toString().equals(p.getLessonDate()))
             .count();
         long behindSchedule = plans.stream()
-            .filter(p -> LessonPlan.STATUS_SCHEDULED.equals(p.getStatus()) || LessonPlan.STATUS_EXTENDED.equals(p.getStatus()))
+            .filter(p -> !LessonPlan.STATUS_COMPLETED.equals(p.getStatus()))
             .filter(p -> isBeforeToday(p.getLessonDate(), today))
             .count();
 
@@ -124,7 +124,7 @@ public class DashboardHomeController {
         teachingDaysLeftValue.setText(String.valueOf(teachingDaysLeft));
 
         // School events
-        List<SchoolEvent> upcomingEvents = events.stream()
+        List<SchoolEvent> allUpcomingEvents = events.stream()
             .filter(e -> {
                 try {
                     LocalDate eventDate = LocalDate.parse(e.getEventDate());
@@ -134,10 +134,10 @@ public class DashboardHomeController {
                 }
             })
             .sorted((a, b) -> a.getEventDate().compareTo(b.getEventDate()))
-            .limit(3)
             .toList();
 
-        schoolEventsValue.setText(String.valueOf(upcomingEvents.size()));
+        schoolEventsValue.setText(String.valueOf(allUpcomingEvents.size()));
+        List<SchoolEvent> upcomingEvents = allUpcomingEvents.stream().limit(3).toList();
         if (!upcomingEvents.isEmpty()) {
             nextEventNameLabel.setText(upcomingEvents.get(0).getEventName());
             try {
@@ -174,8 +174,12 @@ public class DashboardHomeController {
             welcomeLabel.getScene().getWindow(), null, currentUser.getUserId());
 
         result.ifPresent(plan -> {
-            lessonPlanDAO.createLessonPlan(plan);
-            loadDashboardData();
+            if (lessonPlanDAO.createLessonPlan(plan)) {
+                showSuccessMessage("Lesson plan created.");
+                loadDashboardData();
+            } else {
+                showErrorMessage("Failed to create the lesson plan.");
+            }
         });
     }
 
@@ -189,6 +193,7 @@ public class DashboardHomeController {
             List<LessonPlan> allScheduled = lessonPlanDAO.findByTeacher(currentUser.getUserId())
                 .stream()
                 .filter(p -> !LessonPlan.STATUS_COMPLETED.equals(p.getStatus()))
+                .filter(p -> p.getLessonDate() != null && !isBeforeToday(p.getLessonDate(), LocalDate.now()))
                 .sorted((a, b) -> a.getLessonDate().compareTo(b.getLessonDate()))
                 .collect(Collectors.toList());
 
@@ -365,12 +370,15 @@ public class DashboardHomeController {
         Optional<String> result = formatDialog.showAndWait();
         if (result.isPresent()) {
             String format = result.get();
-            String fileName = lessonPlan.getTitle().replaceAll("[^a-zA-Z0-9\\s]", "").trim();
+            String fileName = lessonPlan.getTitle().replaceAll("[^a-zA-Z0-9\\s-]", "").trim();
+            if (fileName.isEmpty()) {
+                fileName = "lesson-plan";
+            }
             File downloadsFolder = new File(System.getProperty("user.home"), "Downloads");
-            
             ExportService exportService = ExportService.getInstance();
             
             try {
+                java.nio.file.Files.createDirectories(downloadsFolder.toPath());
                 if (format.equals("PDF")) {
                     File pdfFile = new File(downloadsFolder, fileName + ".pdf");
                     boolean success = exportService.exportToPDF(lessonPlan, pdfFile.getAbsolutePath());
@@ -422,13 +430,19 @@ public class DashboardHomeController {
     }
 
     private void showSuccessMessage(String message) {
-        System.out.println("SUCCESS: " + message);
-        // For now using console output - can be enhanced with proper notifications
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Lesson Plan");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     private void showErrorMessage(String message) {
-        System.err.println("ERROR: " + message);
-        // For now using console output - can be enhanced with proper notifications
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Lesson Plan Action Failed");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     private boolean isBeforeToday(String isoDate, LocalDate today) {
@@ -455,6 +469,8 @@ public class DashboardHomeController {
         switch (status) {
             case LessonPlan.STATUS_COMPLETED: return "completed";
             case LessonPlan.STATUS_EXTENDED: return "extended";
+            case LessonPlan.STATUS_INCOMPLETE: return "incomplete";
+            case LessonPlan.STATUS_RESCHEDULED: return "rescheduled";
             default: return "scheduled";
         }
     }

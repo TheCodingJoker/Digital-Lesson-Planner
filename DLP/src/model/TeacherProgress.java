@@ -95,6 +95,6 @@ public class TeacherProgress {
     }
     
     public String getProgressDisplay() {
-        return String.format("%.1f%%", progressPercentage);
+        return totalLessons == 0 ? "N/A" : String.format("%.1f%%", progressPercentage);
     }
 }

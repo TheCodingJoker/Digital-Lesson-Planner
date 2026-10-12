@@ -13,11 +13,9 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.time.format.TextStyle;
 import java.util.List;
 
 public class LessonCalendarController {
@@ -33,6 +31,7 @@ public class LessonCalendarController {
     private final SchoolEventDAO schoolEventDAO = new SchoolEventDAO();
     private YearMonth currentMonth;
     private LocalDate selectedDate;
+    private List<SchoolEvent> currentEvents = List.of();
     private static final DateTimeFormatter MONTH_YEAR_FORMATTER = DateTimeFormatter.ofPattern("MMMM yyyy");
 
     @FXML
@@ -49,6 +48,8 @@ public class LessonCalendarController {
 
     private void navigateMonth(int delta) {
         currentMonth = currentMonth.plusMonths(delta);
+        int day = Math.min(selectedDate.getDayOfMonth(), currentMonth.lengthOfMonth());
+        selectedDate = currentMonth.atDay(day);
         loadCalendar();
     }
 
@@ -81,7 +82,7 @@ public class LessonCalendarController {
             lessonPlanDAO.findByTeacher(currentUser.getUserId()) : List.of();
 
         // Get school events for the month
-        List<SchoolEvent> events = schoolEventDAO.getAllSchoolEvents();
+        currentEvents = schoolEventDAO.getAllSchoolEvents();
 
         // Add empty cells for days before the first of the month
         int row = 1;
@@ -109,7 +110,7 @@ public class LessonCalendarController {
             }
 
             // Check for events
-            for (SchoolEvent event : events) {
+            for (SchoolEvent event : currentEvents) {
                 try {
                     LocalDate eventDate = LocalDate.parse(event.getEventDate());
                     if (eventDate.equals(date)) {
@@ -172,6 +173,13 @@ public class LessonCalendarController {
         List<LessonPlan> lessons = lessonPlanDAO.findByTeacher(currentUser.getUserId());
 
         int count = 0;
+        List<SchoolEvent> dateEvents = eventsForSelectedDate();
+        for (SchoolEvent event : dateEvents) {
+            Label eventLabel = new Label(event.getEventName() + " (" + displayEventType(event.getEventType()) + ")");
+            eventLabel.setStyle("-fx-padding: 8; -fx-background-color: #f3f4f6; -fx-background-radius: 4;");
+            selectedDateLessons.getChildren().add(eventLabel);
+        }
+
         for (LessonPlan lesson : lessons) {
             try {
                 LocalDate lessonDate = LocalDate.parse(lesson.getLessonDate());
@@ -188,10 +196,20 @@ public class LessonCalendarController {
             }
         }
 
-        if (count == 0) {
+        if (count == 0 && dateEvents.isEmpty()) {
             Label noLessons = new Label("No lessons scheduled for this date");
             noLessons.setStyle("-fx-text-fill: #999; -fx-padding: 8;");
             selectedDateLessons.getChildren().add(noLessons);
         }
+    }
+
+    private List<SchoolEvent> eventsForSelectedDate() {
+        return currentEvents.stream()
+            .filter(event -> selectedDate.toString().equals(event.getEventDate()))
+            .toList();
+    }
+
+    private String displayEventType(String eventType) {
+        return "FULL_DAY".equals(eventType) ? "Full day" : "Half day";
     }
 }

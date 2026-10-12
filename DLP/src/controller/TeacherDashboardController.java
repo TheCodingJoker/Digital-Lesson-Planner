@@ -6,7 +6,6 @@ import util.SessionManager;
 import util.FeedbackDialog;
 import dao.NotificationDAO;
 import model.Notification;
-import service.SchedulingEngine;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -14,7 +13,9 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ButtonBar;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
@@ -27,7 +28,6 @@ public class TeacherDashboardController {
     @FXML private Button logoutButton;
     @FXML private Button notificationButton;
     @FXML private Label notificationBadge;
-    @FXML private Label teachingDaysRemainingLabel;
 
     @FXML private Button navDashboardButton;
     @FXML private Button navLessonPlansButton;
@@ -36,12 +36,11 @@ public class TeacherDashboardController {
     @FXML private StackPane contentArea;
 
     private NotificationDAO notificationDAO;
-    private SchedulingEngine schedulingEngine;
 
     @FXML
     public void initialize() {
         notificationDAO = new NotificationDAO();
-        schedulingEngine = SchedulingEngine.getInstance();
+        notificationButton.setTooltip(new Tooltip("Notifications"));
 
         User currentUser = SessionManager.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -55,7 +54,6 @@ public class TeacherDashboardController {
         loadFragment("/view/fragments/DashboardHomeView.fxml");
         setupActivityMonitoring();
         updateNotificationBadge();
-        updateTeachingDaysRemaining();
     }
 
     private String formatDisplayName(String username) {
@@ -92,6 +90,11 @@ public class TeacherDashboardController {
             contentArea.getChildren().setAll(content);
         } catch (Exception e) {
             e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Unable to Open Teacher Page");
+            alert.setHeaderText(null);
+            alert.setContentText("The requested page could not be loaded. " + e.getMessage());
+            alert.showAndWait();
         }
     }
 
@@ -130,11 +133,11 @@ public class TeacherDashboardController {
         User currentUser = SessionManager.getInstance().getCurrentUser();
         if (currentUser == null) return;
 
+        updateNotificationBadge();
         List<Notification> notifications = notificationDAO.getUnreadNotificationsByUser(currentUser.getUserId());
 
         if (notifications.isEmpty()) {
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
-                javafx.scene.control.Alert.AlertType.INFORMATION);
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Notifications");
             alert.setHeaderText("No new notifications");
             alert.setContentText("You have no unread notifications.");
@@ -160,7 +163,8 @@ public class TeacherDashboardController {
                 if (empty || notification == null) {
                     setText(null);
                 } else {
-                    setText(notification.getTitle() + "\n" + notification.getMessage());
+                    setText(notification.getTitle() + "\n" + notification.getMessage()
+                        + "\n" + notification.getCreatedAt());
                     setStyle("-fx-text-fill: black; -fx-font-size: 12px;");
                 }
             }
@@ -180,8 +184,11 @@ public class TeacherDashboardController {
 
         dialog.setResultConverter(buttonType -> {
             if (buttonType == markAllReadButtonType) {
-                notificationDAO.markAllAsRead(userId);
-                updateNotificationBadge();
+                if (notificationDAO.markAllAsRead(userId)) {
+                    updateNotificationBadge();
+                } else {
+                    showError("Notifications could not be marked as read.");
+                }
             }
             return null;
         });
@@ -199,16 +206,19 @@ public class TeacherDashboardController {
         if (count > 0) {
             notificationBadge.setText(String.valueOf(count));
             notificationBadge.setVisible(true);
+            notificationBadge.setManaged(true);
         } else {
             notificationBadge.setVisible(false);
+            notificationBadge.setManaged(false);
         }
     }
 
-    private void updateTeachingDaysRemaining() {
-        if (teachingDaysRemainingLabel != null) {
-            int daysRemaining = schedulingEngine.getTeachingDaysRemaining();
-            teachingDaysRemainingLabel.setText(String.valueOf(daysRemaining));
-        }
+    private void showError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Action Failed");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     private void setupActivityMonitoring() {

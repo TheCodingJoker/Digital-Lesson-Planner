@@ -75,7 +75,7 @@
                     </VBox>
                     
                     <VBox spacing="8" prefWidth="200" prefHeight="100" alignment="CENTER" styleClass="kpi-card-success">
-                        <Label text="On Track" styleClass="kpi-label"/>
+                        <Label text="High Completion" styleClass="kpi-label"/>
                         <Label fx:id="onTrackLabel" text="0" styleClass="kpi-value"/>
                     </VBox>
                     
@@ -134,12 +134,12 @@
                         <padding>
                             <Insets top="20" right="20" bottom="20" left="20"/>
                         </padding>
-                        <Label text="Overall Status" styleClass="section-label"/>
+                        <Label text="Completion Bands" styleClass="section-label"/>
                         
                         <VBox spacing="14">
                             <VBox spacing="4">
                                 <HBox spacing="12" alignment="CENTER_LEFT">
-                                    <Label text="On Track" prefWidth="100" styleClass="status-label-green"/>
+                                    <Label text="High (70%+)" prefWidth="110" styleClass="status-label-green"/>
                                     <Label fx:id="onTrackPercentLabel" text="0%" prefWidth="50" styleClass="status-percent-label"/>
                                 </HBox>
                                 <ProgressBar fx:id="onTrackProgressBar" prefWidth="280" progress="0" styleClass="status-progress-green"/>
@@ -147,7 +147,7 @@
                             
                             <VBox spacing="4">
                                 <HBox spacing="12" alignment="CENTER_LEFT">
-                                    <Label text="At Risk" prefWidth="100" styleClass="status-label-amber"/>
+                                    <Label text="Moderate (50% to &lt;70%)" prefWidth="140" styleClass="status-label-amber"/>
                                     <Label fx:id="atRiskPercentLabel" text="0%" prefWidth="50" styleClass="status-percent-label"/>
                                 </HBox>
                                 <ProgressBar fx:id="atRiskProgressBar" prefWidth="280" progress="0" styleClass="status-progress-amber"/>
@@ -155,7 +155,7 @@
                             
                             <VBox spacing="4">
                                 <HBox spacing="12" alignment="CENTER_LEFT">
-                                    <Label text="Behind" prefWidth="100" styleClass="status-label-red"/>
+                                    <Label text="Low (&lt;50%)" prefWidth="110" styleClass="status-label-red"/>
                                     <Label fx:id="behindPercentLabel" text="0%" prefWidth="50" styleClass="status-percent-label"/>
                                 </HBox>
                                 <ProgressBar fx:id="behindProgressBar" prefWidth="280" progress="0" styleClass="status-progress-red"/>
@@ -173,7 +173,7 @@
                     <HBox spacing="12" alignment="CENTER_LEFT">
                         <Label text="Teacher Progress Overview" styleClass="section-label"/>
                         <Pane HBox.hgrow="ALWAYS"/>
-                        <Button text="Export Report" onAction="#handleExportReport" styleClass="primary-button"/>
+                        <Button text="Export CSV" onAction="#handleExportReport" styleClass="primary-button"/>
                     </HBox>
                     
                     <TableView fx:id="teacherProgressTable" VBox.vgrow="ALWAYS" styleClass="data-table">

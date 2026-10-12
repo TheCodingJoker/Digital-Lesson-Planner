@@ -35,14 +35,15 @@ The Digital Lesson Planner (DLP) is a desktop application designed to help South
 - Smart scheduling with automatic rescheduling (Push-Back Protocol)
 - Export lesson plans to PDF and Word formats
 - View progress metrics and teaching days remaining
-- Calendar view with scheduled lessons
+- Calendar view with scheduled lessons and school-event details
+- Review system notifications and submit feedback from the teacher portal
 
 ### For Principals
-- Monitor curriculum progress across all teachers
-- View per-teacher completion percentages
-- Identify teachers who need support
-- Export progress reports
-- View school calendar and events
+- Review lesson-completion bands (high: 70%+, moderate: 50% to below 70%, low: below 50%) across active teachers
+- Identify teachers with no lesson plans separately from teachers with low completion
+- Distinguish teachers with no lesson plans from teachers behind schedule
+- View the current academic year's teaching days and school events
+- Export a CSV progress report for all active teachers
 
 ### For Administrators
 - Manage user accounts (Teachers, Principals, Administrators)

@@ -2,6 +2,7 @@
 package controller;
 
 import dao.LessonPlanDAO;
+import service.SchedulingEngine;
 import model.LessonPlan;
 import model.User;
 import util.DialogHelper;
@@ -75,7 +76,8 @@ public class LessonPlansController {
         ));
         filterGradeCombo.getSelectionModel().selectFirst();
 
-        filterStatusCombo.setItems(FXCollections.observableArrayList("All Status", "Scheduled", "Completed", "Extended"));
+        filterStatusCombo.setItems(FXCollections.observableArrayList(
+            "All Status", "Scheduled", "Completed", "Extended", "Incomplete", "Rescheduled"));
         filterStatusCombo.getSelectionModel().selectFirst();
 
         // Enable real-time search
@@ -118,10 +120,13 @@ public class LessonPlansController {
         List<LessonPlan> plans = lessonPlanDAO.findByTeacher(currentUser.getUserId());
 
         // Search text filter
-        String searchText = searchField.getText().toLowerCase();
-        if (searchText != null && !searchText.isEmpty()) {
+        String searchText = searchField.getText() == null
+            ? "" : searchField.getText().trim().toLowerCase();
+        if (!searchText.isEmpty()) {
             plans = plans.stream()
-                .filter(p -> p.getTitle() != null && p.getTitle().toLowerCase().contains(searchText))
+                .filter(p -> containsIgnoreCase(p.getTitle(), searchText)
+                    || containsIgnoreCase(p.getTopic(), searchText)
+                    || containsIgnoreCase(p.getCapsCode(), searchText))
                 .toList();
         }
 
@@ -173,6 +178,10 @@ public class LessonPlansController {
         lessonPlansTable.setItems(items);
     }
 
+    private boolean containsIgnoreCase(String value, String query) {
+        return value != null && value.toLowerCase().contains(query);
+    }
+
     @FXML
     private void handleNewLessonPlan() {
         User currentUser = SessionManager.getInstance().getCurrentUser();
@@ -182,8 +191,11 @@ public class LessonPlansController {
             lessonPlansTable.getScene().getWindow(), null, currentUser.getUserId());
 
         result.ifPresent(plan -> {
-            lessonPlanDAO.createLessonPlan(plan);
-            loadLessonPlans();
+            if (lessonPlanDAO.createLessonPlan(plan)) {
+                loadLessonPlans();
+            } else {
+                showError("Failed to create the lesson plan.");
+            }
         });
     }
 
@@ -195,14 +207,21 @@ public class LessonPlansController {
             lessonPlansTable.getScene().getWindow(), plan, currentUser.getUserId());
 
         result.ifPresent(updatedPlan -> {
-            lessonPlanDAO.updateLessonPlan(updatedPlan);
-            loadLessonPlans();
+            if (lessonPlanDAO.updateLessonPlan(updatedPlan)) {
+                loadLessonPlans();
+            } else {
+                showError("Failed to save changes to the lesson plan.");
+            }
         });
     }
 
     private void handleMarkStatus(LessonPlan plan, String newStatus) {
-        lessonPlanDAO.updateStatus(plan.getLessonPlanId(), newStatus);
-        loadLessonPlans();
+        if (lessonPlanDAO.updateStatus(plan.getLessonPlanId(), newStatus)) {
+            SchedulingEngine.getInstance().handleLessonStatusChange(plan.getLessonPlanId(), newStatus);
+            loadLessonPlans();
+        } else {
+            showError("Failed to update the lesson status.");
+        }
     }
 
     private void handleDelete(LessonPlan plan) {
@@ -213,9 +232,20 @@ public class LessonPlansController {
 
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            lessonPlanDAO.deleteLessonPlan(plan.getLessonPlanId());
-            loadLessonPlans();
+            if (lessonPlanDAO.deleteLessonPlan(plan.getLessonPlanId())) {
+                loadLessonPlans();
+            } else {
+                showError("Failed to delete the lesson plan.");
+            }
         }
+    }
+
+    private void showError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Lesson Plan Action Failed");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     private Callback<TableColumn<LessonPlan, Void>, TableCell<LessonPlan, Void>> buildActionsCellFactory() {
@@ -241,6 +271,12 @@ public class LessonPlansController {
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : container);
+                if (!empty) {
+                    boolean completed = LessonPlan.STATUS_COMPLETED.equals(
+                        getTableView().getItems().get(getIndex()).getStatus());
+                    completeButton.setDisable(completed);
+                    extendButton.setDisable(completed);
+                }
             }
         };
     }
@@ -259,6 +295,8 @@ public class LessonPlansController {
         switch (status) {
             case LessonPlan.STATUS_COMPLETED: return "Completed";
             case LessonPlan.STATUS_EXTENDED: return "Extended";
+            case LessonPlan.STATUS_INCOMPLETE: return "Incomplete";
+            case LessonPlan.STATUS_RESCHEDULED: return "Rescheduled";
             default: return "Scheduled";
         }
     }
@@ -268,6 +306,8 @@ public class LessonPlansController {
         switch (display) {
             case "Completed": return LessonPlan.STATUS_COMPLETED;
             case "Extended": return LessonPlan.STATUS_EXTENDED;
+            case "Incomplete": return LessonPlan.STATUS_INCOMPLETE;
+            case "Rescheduled": return LessonPlan.STATUS_RESCHEDULED;
             default: return LessonPlan.STATUS_SCHEDULED;
         }
     }

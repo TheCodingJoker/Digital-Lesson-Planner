@@ -320,6 +320,30 @@
     -fx-background-color: #f0f4f8;
 }
 
+.header-icon-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #486581;
+    -fx-font-size: 15px;
+    -fx-padding: 5 7 5 7;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.header-icon-button:hover {
+    -fx-background-color: #f0f4f8;
+}
+
+.notification-badge {
+    -fx-background-color: #dc2626;
+    -fx-background-radius: 10;
+    -fx-text-fill: white;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-padding: 1 4 1 4;
+    -fx-translate-x: 10;
+    -fx-translate-y: -9;
+}
+
 /* ===================== Welcome banner ===================== */
 .welcome-banner {
     -fx-background-color: #1a365d;
