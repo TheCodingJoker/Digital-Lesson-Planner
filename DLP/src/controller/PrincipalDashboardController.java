@@ -4,6 +4,7 @@ import dao.LessonPlanDAO;
 import dao.UserDAO;
 import dao.SchoolCalendarDAO;
 import dao.SchoolEventDAO;
+import dao.NotificationDAO;
 import util.FeedbackDialog;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -13,6 +14,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.chart.BarChart;
@@ -49,6 +51,7 @@ import model.TeacherProgress;
 import model.User;
 import model.SchoolCalendar;
 import model.SchoolEvent;
+import model.Notification;
 import util.SessionManager;
 import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -80,6 +83,10 @@ public class PrincipalDashboardController {
     private Button logoutButton;
     @FXML
     private Button feedbackButton;
+    @FXML
+    private Button notificationButton;
+    @FXML
+    private Label notificationBadge;
     @FXML
     private Button navDashboardButton;
     @FXML
@@ -143,6 +150,7 @@ public class PrincipalDashboardController {
     private final LessonPlanDAO lessonPlanDAO = new LessonPlanDAO();
     private final SchoolCalendarDAO schoolCalendarDAO = new SchoolCalendarDAO();
     private final SchoolEventDAO schoolEventDAO = new SchoolEventDAO();
+    private final NotificationDAO notificationDAO = new NotificationDAO();
     private List<TeacherProgress> currentTeacherProgress = new ArrayList<>();
     private Node dashboardView;
     private boolean dashboardDataLoaded;
@@ -156,9 +164,11 @@ public class PrincipalDashboardController {
         dashboardView = contentArea.getChildren().get(0);
         loadPrincipalName();
         feedbackButton.setTooltip(new Tooltip("Submit feedback"));
+        notificationButton.setTooltip(new Tooltip("Notifications"));
         setupTeacherProgressTable();
         setupSubjectProgressChart();
         loadDashboardData();
+        updateNotificationBadge();
         setupActivityMonitoring();
         setActiveNavigation(navDashboardButton);
         principalKpiContainer.widthProperty().addListener(
@@ -835,6 +845,73 @@ public class PrincipalDashboardController {
     private void handleFeedback() {
         User currentUser = SessionManager.getInstance().getCurrentUser();
         FeedbackDialog.showFeedbackDialog(currentUser);
+    }
+
+    @FXML
+    private void handleNotifications() {
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        if (currentUser == null) return;
+
+        List<Notification> notifications =
+            notificationDAO.getUnreadNotificationsByUser(currentUser.getUserId());
+        if (notifications.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Notifications");
+            alert.setHeaderText("No new notifications");
+            alert.setContentText("You have no unread notifications.");
+            alert.showAndWait();
+            return;
+        }
+
+        javafx.scene.control.Dialog<Void> dialog = new javafx.scene.control.Dialog<>();
+        dialog.setTitle("Notifications");
+        dialog.setHeaderText("You have " + notifications.size() + " unread notification(s)");
+
+        javafx.scene.control.ListView<Notification> listView = new javafx.scene.control.ListView<>();
+        listView.getItems().addAll(notifications);
+        listView.setCellFactory(param -> new javafx.scene.control.ListCell<>() {
+            @Override
+            protected void updateItem(Notification notification, boolean empty) {
+                super.updateItem(notification, empty);
+                if (empty || notification == null) {
+                    setText(null);
+                } else {
+                    setText(notification.getTitle() + "\n" + notification.getMessage()
+                        + "\n" + notification.getCreatedAt());
+                    setStyle("-fx-text-fill: black; -fx-font-size: 12px;");
+                }
+            }
+        });
+
+        VBox notificationList = new VBox(listView);
+        notificationList.setPrefSize(500, 300);
+        dialog.getDialogPane().setContent(notificationList);
+
+        ButtonType markAllReadButton = new ButtonType(
+            "Mark All as Read", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(markAllReadButton, ButtonType.CLOSE);
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == markAllReadButton) {
+                if (notificationDAO.markAllAsRead(currentUser.getUserId())) {
+                    updateNotificationBadge();
+                } else {
+                    showError("Notifications Error", "Notifications could not be marked as read.");
+                }
+            }
+            return null;
+        });
+        dialog.showAndWait();
+    }
+
+    private void updateNotificationBadge() {
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        if (currentUser == null || notificationBadge == null) return;
+
+        int unreadCount =
+            notificationDAO.getUnreadNotificationsByUser(currentUser.getUserId()).size();
+        notificationBadge.setVisible(unreadCount > 0);
+        notificationBadge.setManaged(unreadCount > 0);
+        if (unreadCount > 0) notificationBadge.setText(String.valueOf(unreadCount));
     }
 
     private String csvValue(String value) {

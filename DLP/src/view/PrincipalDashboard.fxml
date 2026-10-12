@@ -48,6 +48,12 @@
                 <Label fx:id="userNameLabel" styleClass="app-header-username"/>
                 <Label text="Principal" styleClass="app-header-userrole"/>
             </VBox>
+            <StackPane>
+                <Button fx:id="notificationButton" text="&#128276;" onAction="#handleNotifications"
+                        styleClass="header-icon-button" accessibleText="Notifications"/>
+                <Label fx:id="notificationBadge" text="0" visible="false" managed="false"
+                       mouseTransparent="true" styleClass="notification-badge"/>
+            </StackPane>
             <Button fx:id="feedbackButton" text="&#128172;" onAction="#handleFeedback"
                     styleClass="header-icon-button" accessibleText="Submit feedback"/>
             <Button fx:id="logoutButton" text="&#10132;" onAction="#handleLogout" styleClass="logout-icon-button"/>

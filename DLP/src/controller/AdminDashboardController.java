@@ -86,6 +86,7 @@ public class AdminDashboardController {
     private final AuditLogDAO auditLogDAO = new AuditLogDAO();
     private final FeedbackDAO feedbackDAO = new FeedbackDAO();
     private final SchoolCalendarDAO calendarDAO = new SchoolCalendarDAO();
+    private final NotificationDAO notificationDAO = new NotificationDAO();
     
     private User currentUser;
 
@@ -719,18 +720,45 @@ public class AdminDashboardController {
         });
 
         dialog.showAndWait().ifPresent(notes -> {
+            boolean wasResolved = "RESOLVED".equalsIgnoreCase(feedback.getStatus());
             feedback.setStatus("RESOLVED");
             feedback.setAdminNotes(notes);
             feedback.setUpdatedAt(java.time.LocalDateTime.now().format(
                 java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
             if (feedbackDAO.updateFeedback(feedback)) {
-                showSuccessMessage("Feedback marked as resolved");
+                if (!wasResolved && !notifyFeedbackSubmitter(feedback)) {
+                    showErrorMessage(
+                        "Feedback was resolved, but the submitter could not be notified.");
+                } else {
+                    showSuccessMessage("Feedback marked as resolved");
+                }
                 loadFeedback();
             } else {
                 showErrorMessage("Failed to update feedback");
             }
         });
+    }
+
+    private boolean notifyFeedbackSubmitter(Feedback feedback) {
+        if (feedback.getUserId() == null || feedback.getUserId().isBlank()) {
+            return false;
+        }
+
+        String message = "Your feedback \"" + feedback.getTitle() + "\" has been resolved.";
+        if (feedback.getAdminNotes() != null && !feedback.getAdminNotes().isBlank()) {
+            message += "\nResolution notes: " + feedback.getAdminNotes().trim();
+        }
+
+        Notification notification = new Notification(
+            UUID.randomUUID().toString(),
+            feedback.getUserId(),
+            "FEEDBACK_RESOLVED",
+            "Feedback resolved",
+            message,
+            feedback.getFeedbackId()
+        );
+        return notificationDAO.createNotification(notification);
     }
 
     private void logAuditAction(String action, String target) {
