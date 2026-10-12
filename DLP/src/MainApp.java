@@ -1,6 +1,7 @@
 
 import util.DatabaseConnection;
 import util.PasswordHasher;
+import util.Grade7CAPSCurriculum;
 import dao.UserDAO;
 import model.User;
 import javafx.application.Application;
@@ -23,6 +24,8 @@ public class MainApp extends Application {
 
         // Initialize database and create default admin user
         initializeDatabase();
+        int curriculumTopicsAdded = Grade7CAPSCurriculum.seed(DatabaseConnection.getConnection());
+        System.out.println("Grade 7 CAPS curriculum ready (" + curriculumTopicsAdded + " new topics added).");
         createDefaultAdminIfNeeded();
 
         // Add shutdown hook to encrypt database on exit

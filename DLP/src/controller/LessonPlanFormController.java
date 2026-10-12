@@ -61,7 +61,7 @@ public class LessonPlanFormController {
         unsavedChangesTracker = UnsavedChangesTracker.getInstance();
 
         subjectCombo.setItems(FXCollections.observableArrayList(
-            "Mathematics", "English Home Language", "Life Skills",
+            "Mathematics", "English Home Language", "English First Additional Language", "Life Skills",
             "Natural Sciences", "Life Sciences", "Social Sciences",
             "Economic and Management Sciences", "Technology", "History",
             "Life Orientation", "Afrikaans First Additional Language"

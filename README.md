@@ -61,6 +61,8 @@ To rebuild the installer from source, install JDK 23 or newer, a JavaFX SDK, Apa
 
 Application data is stored under `%LOCALAPPDATA%\DLP`. The encrypted database is protected for the Windows account that created it; do not copy the database file to a different Windows user or computer.
 
+The first launch seeds 53 Grade 7 Mathematics and English First Additional Language CAPS topic summaries across Terms 1–4. These concise summaries support lesson planning; consult the [Department of Basic Education CAPS documents](https://www.education.gov.za/Curriculum/CurriculumAssessmentPolicyStatements(CAPS).aspx) and your current Annual Teaching Plan for the authoritative scope, sequence and assessment requirements.
+
 ### Prerequisites
 - Windows (database encryption uses Windows DPAPI)
 - Java Development Kit (JDK) 23 or higher
