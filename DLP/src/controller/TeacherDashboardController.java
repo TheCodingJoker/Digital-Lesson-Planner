@@ -103,10 +103,10 @@ public class TeacherDashboardController {
             navDashboardButton, navLessonPlansButton, navCalendarButton
         };
         for (Button b : navButtons) {
-            b.getStyleClass().remove("nav-button-active");
+            b.getStyleClass().remove("teacher-nav-button-active");
         }
-        if (!active.getStyleClass().contains("nav-button-active")) {
-            active.getStyleClass().add("nav-button-active");
+        if (!active.getStyleClass().contains("teacher-nav-button-active")) {
+            active.getStyleClass().add("teacher-nav-button-active");
         }
     }
 

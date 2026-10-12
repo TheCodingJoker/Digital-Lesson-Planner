@@ -10,7 +10,7 @@ public class TeacherProgress {
     private double progressPercentage;
     private int completedLessons;
     private int totalLessons;
-    private String status; // ON_TRACK, AT_RISK, BEHIND
+    private String status; // ON_TRACK or BEHIND
     
     public TeacherProgress() {
     }

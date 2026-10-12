@@ -93,7 +93,7 @@
                                     <Label text="On Track" styleClass="kpi-label"/>
                                 </HBox>
                                 <Label fx:id="onTrackLabel" text="0" styleClass="kpi-value"/>
-                                <Label text="At least 70% complete" styleClass="kpi-caption"/>
+                                <Label text="No extended lessons" styleClass="kpi-caption"/>
                             </VBox>
                             <VBox spacing="8" prefHeight="112" maxWidth="Infinity" alignment="CENTER_LEFT"
                                   styleClass="principal-kpi-card, principal-kpi-warning">
@@ -102,7 +102,7 @@
                                     <Label text="Need Support" styleClass="kpi-label"/>
                                 </HBox>
                                 <Label fx:id="needSupportLabel" text="0" styleClass="kpi-value"/>
-                                <Label text="Below 50% or no lesson plans" styleClass="kpi-caption"/>
+                                <Label text="Has an extended lesson" styleClass="kpi-caption"/>
                             </VBox>
                         </FlowPane>
 
@@ -154,15 +154,11 @@
                                     <VBox spacing="10" alignment="CENTER_LEFT" styleClass="principal-chart-legend">
                                         <HBox spacing="6" alignment="CENTER_LEFT">
                                             <Circle radius="4" styleClass="principal-legend-dot-green"/>
-                                            <Label fx:id="highCompletionLegendLabel" text="On Track: 0 (0%)"/>
-                                        </HBox>
-                                        <HBox spacing="6" alignment="CENTER_LEFT">
-                                            <Circle radius="4" styleClass="principal-legend-dot-amber"/>
-                                            <Label fx:id="moderateCompletionLegendLabel" text="At Risk: 0 (0%)"/>
+                                            <Label fx:id="onTrackLegendLabel" text="On Track: 0 (0%)"/>
                                         </HBox>
                                         <HBox spacing="6" alignment="CENTER_LEFT">
                                             <Circle radius="4" styleClass="principal-legend-dot-red"/>
-                                            <Label fx:id="lowCompletionLegendLabel" text="Behind: 0 (0%)"/>
+                                            <Label fx:id="behindLegendLabel" text="Behind: 0 (0%)"/>
                                         </HBox>
                                     </VBox>
                                 </HBox>

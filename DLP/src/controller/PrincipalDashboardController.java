@@ -84,7 +84,7 @@ public class PrincipalDashboardController {
     @FXML
     private Label needSupportLabel;
 
-    // Completion band pie KPI
+    // Teacher status pie KPI
     @FXML
     private PieChart completionBandPieChart;
     @FXML
@@ -92,11 +92,9 @@ public class PrincipalDashboardController {
     @FXML
     private Label completionBandTotalLabel;
     @FXML
-    private Label highCompletionLegendLabel;
+    private Label onTrackLegendLabel;
     @FXML
-    private Label moderateCompletionLegendLabel;
-    @FXML
-    private Label lowCompletionLegendLabel;
+    private Label behindLegendLabel;
 
     @FXML
     private BarChart<String, Number> subjectProgressChart;
@@ -173,30 +171,22 @@ public class PrincipalDashboardController {
     private String formatStatus(String status) {
         if (status == null) return "";
         switch (status) {
-            case "HIGH_COMPLETION":
-                return "High Completion";
-            case "MODERATE_COMPLETION":
-                return "Moderate Completion";
-            case "LOW_COMPLETION":
-                return "Low Completion";
-            case "NO_LESSONS":
-                return "No Lessons";
+            case "ON_TRACK":
+                return "On Track";
+            case "BEHIND":
+                return "Behind";
             default:
-                return status == null ? "" : status;
+                return status;
         }
     }
 
     private String getStatusStyle(String status) {
         if (status == null) return "";
         switch (status) {
-            case "HIGH_COMPLETION":
+            case "ON_TRACK":
                 return "-fx-text-fill: #16a34a; -fx-font-weight: bold;";
-            case "MODERATE_COMPLETION":
-                return "-fx-text-fill: #d97706; -fx-font-weight: bold;";
-            case "LOW_COMPLETION":
+            case "BEHIND":
                 return "-fx-text-fill: #dc2626; -fx-font-weight: bold;";
-            case "NO_LESSONS":
-                return "-fx-text-fill: #64748b; -fx-font-weight: bold;";
             default:
                 return "";
         }
@@ -351,11 +341,8 @@ public class PrincipalDashboardController {
 
             int totalTeachers = teachers.size();
             double totalProgress = 0;
-            int highCompletionCount = 0;
-            int moderateCompletionCount = 0;
-            int lowCompletionCount = 0;
             int teachersWithLessons = 0;
-            int noLessonsCount = 0;
+            int behindCount = 0;
 
             List<LessonPlan> allLessons = new ArrayList<>();
 
@@ -376,24 +363,12 @@ public class PrincipalDashboardController {
                 double progressPercentage = totalLessons > 0
                     ? (completedLessons * 100.0 / totalLessons) : 0;
 
-                // Determine status
-                String status;
-                if (totalLessons == 0) {
-                    status = "NO_LESSONS";
-                    noLessonsCount++;
-                } else if (progressPercentage >= 70) {
-                    status = "HIGH_COMPLETION";
-                    highCompletionCount++;
-                    teachersWithLessons++;
-                } else if (progressPercentage >= 50) {
-                    status = "MODERATE_COMPLETION";
-                    moderateCompletionCount++;
-                    teachersWithLessons++;
-                } else {
-                    status = "LOW_COMPLETION";
-                    lowCompletionCount++;
-                    teachersWithLessons++;
-                }
+                boolean hasExtendedLesson = lessons.stream()
+                    .anyMatch(lesson -> LessonPlan.STATUS_EXTENDED.equals(lesson.getStatus()));
+                String status = hasExtendedLesson ? "BEHIND" : "ON_TRACK";
+                if (hasExtendedLesson) behindCount++;
+
+                if (totalLessons > 0) teachersWithLessons++;
                 if (totalLessons > 0) totalProgress += progressPercentage;
 
                 String subject = getSingleOrMultipleValue(
@@ -420,16 +395,14 @@ public class PrincipalDashboardController {
             double averageProgress = teachersWithLessons > 0 ? totalProgress / teachersWithLessons : 0;
             averageProgressLabel.setText(String.format(Locale.ROOT, "%.1f%%", averageProgress));
             
-            onTrackLabel.setText(String.valueOf(highCompletionCount));
-            needSupportLabel.setText(String.valueOf(
-                moderateCompletionCount + lowCompletionCount + noLessonsCount));
+            int onTrackCount = totalTeachers - behindCount;
+            onTrackLabel.setText(String.valueOf(onTrackCount));
+            needSupportLabel.setText(String.valueOf(behindCount));
 
             // Aggregate every teacher's lessons by subject area.
             updateSubjectProgress(allLessons);
             
-            // Update completion-band pie KPI
-            updateCompletionBandPie(teachersWithLessons, highCompletionCount,
-                moderateCompletionCount, lowCompletionCount);
+            updateTeacherStatusPie(totalTeachers, onTrackCount, behindCount);
 
             // Populate table
             teacherProgressTable.getItems().clear();
@@ -504,19 +477,12 @@ public class PrincipalDashboardController {
         series.getData().add(data);
     }
     
-    private void updateCompletionBandPie(
-            int totalTeachers, int highCompletionCount, int moderateCompletionCount, int lowCompletionCount) {
-        double highCompletionPercent = getSharePercent(highCompletionCount, totalTeachers);
-        double moderateCompletionPercent = getSharePercent(moderateCompletionCount, totalTeachers);
-        double lowCompletionPercent = getSharePercent(lowCompletionCount, totalTeachers);
-
+    private void updateTeacherStatusPie(int totalTeachers, int onTrackCount, int behindCount) {
         completionBandTotalLabel.setText(String.valueOf(totalTeachers));
-        highCompletionLegendLabel.setText(formatCompletionLegend(
-            "On Track", highCompletionCount, highCompletionPercent));
-        moderateCompletionLegendLabel.setText(formatCompletionLegend(
-            "At Risk", moderateCompletionCount, moderateCompletionPercent));
-        lowCompletionLegendLabel.setText(formatCompletionLegend(
-            "Behind", lowCompletionCount, lowCompletionPercent));
+        onTrackLegendLabel.setText(formatCompletionLegend(
+            "On Track", onTrackCount, getSharePercent(onTrackCount, totalTeachers)));
+        behindLegendLabel.setText(formatCompletionLegend(
+            "Behind", behindCount, getSharePercent(behindCount, totalTeachers)));
 
         completionBandEmptyLabel.setVisible(totalTeachers == 0);
         completionBandEmptyLabel.setManaged(totalTeachers == 0);
@@ -528,16 +494,14 @@ public class PrincipalDashboardController {
         }
 
         List<PieChart.Data> slices = new ArrayList<>();
-        addCompletionBandSlice(slices, "High completion", highCompletionCount, "#16a34a");
-        addCompletionBandSlice(slices, "Moderate completion", moderateCompletionCount, "#d97706");
-        addCompletionBandSlice(slices, "Low completion", lowCompletionCount, "#dc2626");
+        addCompletionBandSlice(slices, "On Track", onTrackCount, "#16a34a");
+        addCompletionBandSlice(slices, "Behind", behindCount, "#dc2626");
         completionBandPieChart.setData(FXCollections.observableArrayList(slices));
         completionBandPieChart.setAccessibleText(String.format(
             Locale.ROOT,
-            "Completion bands: high %d percent, moderate %d percent, low %d percent",
-            Math.round(highCompletionPercent),
-            Math.round(moderateCompletionPercent),
-            Math.round(lowCompletionPercent)));
+            "Teacher status: on track %d percent, behind %d percent",
+            Math.round(getSharePercent(onTrackCount, totalTeachers)),
+            Math.round(getSharePercent(behindCount, totalTeachers))));
     }
 
     private double getSharePercent(int count, int total) {

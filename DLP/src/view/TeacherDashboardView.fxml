@@ -11,13 +11,13 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="controller.TeacherDashboardController"
-            styleClass="dashboard-root"
+            styleClass="dashboard-root, teacher-dashboard"
             stylesheets="@styles/dlp-theme.css">
 
     <top>
-        <HBox styleClass="app-header" alignment="CENTER_LEFT" spacing="12">
+        <HBox styleClass="app-header, teacher-app-header" alignment="CENTER_LEFT" spacing="12">
             <padding>
-                <Insets top="12" right="24" bottom="12" left="24"/>
+                <Insets top="8" right="28" bottom="8" left="28"/>
             </padding>
 
             <Label text="&#128214;" styleClass="app-header-icon"/>
@@ -27,6 +27,13 @@
             </VBox>
 
             <Region HBox.hgrow="ALWAYS"/>
+
+            <Button fx:id="navDashboardButton" text="Dashboard" onAction="#handleNavDashboard"
+                    styleClass="teacher-nav-button"/>
+            <Button fx:id="navCalendarButton" text="Calendar" onAction="#handleNavCalendar"
+                    styleClass="teacher-nav-button"/>
+            <Button fx:id="navLessonPlansButton" text="Lesson Plans" onAction="#handleNavLessonPlans"
+                    styleClass="teacher-nav-button"/>
 
             <VBox spacing="0" alignment="CENTER_RIGHT">
                 <Label fx:id="userNameLabel" styleClass="app-header-username"/>
@@ -42,20 +49,6 @@
             <Button fx:id="logoutButton" text="&#10132;" onAction="#handleLogout" styleClass="logout-icon-button"/>
         </HBox>
     </top>
-
-    <left>
-        <VBox styleClass="sidebar" prefWidth="220" spacing="4">
-            <padding>
-                <Insets top="24" right="0" bottom="24" left="0"/>
-            </padding>
-            <Button fx:id="navDashboardButton" text="Dashboard" onAction="#handleNavDashboard"
-                    styleClass="nav-button" maxWidth="Infinity"/>
-            <Button fx:id="navLessonPlansButton" text="My Lesson Plans" onAction="#handleNavLessonPlans"
-                    styleClass="nav-button" maxWidth="Infinity"/>
-            <Button fx:id="navCalendarButton" text="Calendar" onAction="#handleNavCalendar"
-                    styleClass="nav-button" maxWidth="Infinity"/>
-        </VBox>
-    </left>
 
     <center>
         <StackPane fx:id="contentArea" styleClass="dashboard-content"/>

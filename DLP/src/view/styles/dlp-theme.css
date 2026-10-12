@@ -320,6 +320,28 @@
     -fx-background-color: #f0f4f8;
 }
 
+.teacher-dashboard .teacher-app-header {
+    -fx-spacing: 12;
+    -fx-padding: 8 28;
+    -fx-effect: dropshadow(gaussian, rgba(16, 42, 67, 0.08), 6, 0.08, 0, 2);
+}
+
+.teacher-dashboard .teacher-nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #486581;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 10;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.teacher-dashboard .teacher-nav-button:hover,
+.teacher-dashboard .teacher-nav-button-active {
+    -fx-background-color: #edf3fa;
+    -fx-text-fill: #082d60;
+}
+
 .header-icon-button {
     -fx-background-color: transparent;
     -fx-text-fill: #486581;
