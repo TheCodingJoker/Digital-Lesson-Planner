@@ -43,6 +43,20 @@ public class AuditLogDAO {
         return logs;
     }
 
+    public List<AuditLog> getAllAuditLogsForExport() throws SQLException {
+        List<AuditLog> logs = new ArrayList<>();
+        String sql = "SELECT * FROM AuditLog ORDER BY timestamp DESC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                logs.add(extractAuditLog(rs));
+            }
+        }
+        return logs;
+    }
+
     public List<AuditLog> getAuditLogsByUser(String userId) {
         List<AuditLog> logs = new ArrayList<>();
         String sql = "SELECT * FROM AuditLog WHERE userId = ? ORDER BY timestamp DESC";

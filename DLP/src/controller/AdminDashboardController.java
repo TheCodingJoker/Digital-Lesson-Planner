@@ -13,7 +13,14 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -605,8 +612,51 @@ public class AdminDashboardController {
 
     @FXML
     private void handleExportLog() {
-        System.out.println("Export audit log functionality");
-        // TODO: Implement export to file
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export Audit Log");
+        chooser.setInitialFileName("audit-log.csv");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV files", "*.csv"));
+        File file = chooser.showSaveDialog(auditLogTable.getScene().getWindow());
+        if (file == null) return;
+        if (!file.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".csv")) {
+            file = new File(file.getParentFile(), file.getName() + ".csv");
+        }
+
+        List<AuditLog> logs;
+        try {
+            logs = auditLogDAO.getAllAuditLogsForExport();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            showErrorMessage("Unable to load audit log for export: " + e.getMessage());
+            return;
+        }
+
+        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
+            writer.write("Entry ID,User ID,Action,Target,Timestamp");
+            writer.newLine();
+            for (AuditLog log : logs) {
+                writer.write(csvValue(log.getEntryId()));
+                writer.write(",");
+                writer.write(csvValue(log.getUserId()));
+                writer.write(",");
+                writer.write(csvValue(log.getAction()));
+                writer.write(",");
+                writer.write(csvValue(log.getTarget()));
+                writer.write(",");
+                writer.write(csvValue(log.getTimestamp()));
+                writer.newLine();
+            }
+            showSuccessMessage("Audit log exported to " + file.getAbsolutePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+            showErrorMessage("Unable to export audit log: " + e.getMessage());
+        }
+    }
+
+    private String csvValue(String value) {
+        String safeValue = value == null ? "" : value;
+        if (safeValue.matches("^[\\s]*[=+@-].*")) safeValue = "'" + safeValue;
+        return "\"" + safeValue.replace("\"", "\"\"") + "\"";
     }
 
     @FXML

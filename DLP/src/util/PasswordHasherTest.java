@@ -7,29 +7,31 @@ package util;
 public class PasswordHasherTest {
 
     public static void main(String[] args) {
-        System.out.println("Testing Argon2 Password Hashing...\n");
-
         String testPassword = "TestPassword123!";
-
-        // Test hashing
         String hash = PasswordHasher.hashPassword(testPassword);
-        System.out.println("Hash generated: " + hash);
-        System.out.println("Hash length: " + hash.length());
-        System.out.println("Is Argon2 hash: " + PasswordHasher.isArgon2Hash(hash));
-        System.out.println("Is BCrypt hash: " + PasswordHasher.isBCryptHash(hash));
+        assertTrue(PasswordHasher.verifyPassword(testPassword, hash),
+            "The correct password should verify.");
+        assertTrue(!PasswordHasher.verifyPassword("WrongPassword", hash),
+            "A wrong password must not verify.");
+        assertTrue(!PasswordHasher.verifyPassword(null, hash),
+            "A null password must not verify.");
+        assertTrue(!PasswordHasher.verifyPassword(testPassword, null),
+            "A null hash must not verify.");
 
-        // Test verification
-        boolean isValid = PasswordHasher.verifyPassword(testPassword, hash);
-        System.out.println("\nVerification (correct password): " + isValid);
+        boolean rejectedEmptyPassword = false;
+        try {
+            PasswordHasher.hashPassword("");
+        } catch (IllegalArgumentException expected) {
+            rejectedEmptyPassword = true;
+        }
+        assertTrue(rejectedEmptyPassword, "An empty password must not be hashed.");
 
-        // Test with wrong password
-        boolean isInvalid = PasswordHasher.verifyPassword("WrongPassword", hash);
-        System.out.println("Verification (wrong password): " + isInvalid);
+        System.out.println("Password hashing checks passed.");
+    }
 
-        // Test with null/empty
-        boolean nullTest = PasswordHasher.verifyPassword(null, hash);
-        System.out.println("Verification (null password): " + nullTest);
-
-        System.out.println("\nAll tests completed successfully!");
+    private static void assertTrue(boolean condition, String message) {
+        if (!condition) {
+            throw new AssertionError(message);
+        }
     }
 }

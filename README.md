@@ -39,8 +39,8 @@ The Digital Lesson Planner (DLP) is a desktop application designed to help South
 - Review system notifications and submit feedback from the teacher portal
 
 ### For Principals
-- Review lesson-completion bands (high: 70%+, moderate: 50% to below 70%, low: below 50%) across active teachers
-- Identify teachers with no lesson plans separately from teachers with low completion
+- Review completion progress for every subject area represented in teachers' lesson plans
+- See teachers marked "Behind" when they have at least one extended lesson; all others are marked "On Track"
 - View the current academic year's teaching days and school events
 - Export a CSV progress report for all active teachers
 
@@ -48,7 +48,7 @@ The Digital Lesson Planner (DLP) is a desktop application designed to help South
 - Manage user accounts (Teachers, Principals, Administrators)
 - Edit CAPS curriculum database (Strands, Topics, Codes, Outcomes)
 - Set system-wide teaching-day targets by academic year and manage school calendar events (Full Day, Half Day)
-- View tamper-proof audit log of all administrative actions
+- View and export the system audit log
 - Manage feedback and issue reports
 
 ## Instructions
