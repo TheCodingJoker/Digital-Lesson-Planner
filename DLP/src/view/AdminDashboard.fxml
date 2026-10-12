@@ -107,12 +107,23 @@
                         <Button text="+ Add Event" onAction="#handleAddEvent" styleClass="primary-button"/>
                     </HBox>
                     
-                    <TableView fx:id="eventsTable" styleClass="data-table">
+                    <TableView fx:id="eventsTable" styleClass="data-table" minHeight="100" prefHeight="220" VBox.vgrow="ALWAYS">
                         <columns>
                             <TableColumn fx:id="eventNameColumn" text="Event Name" prefWidth="200"/>
                             <TableColumn fx:id="eventDateColumn" text="Date" prefWidth="120"/>
                             <TableColumn fx:id="eventTypeColumn" text="Type" prefWidth="100"/>
                             <TableColumn fx:id="eventActionsColumn" text="Actions" prefWidth="100"/>
+                        </columns>
+                    </TableView>
+
+                    <Label text="Academic Year Settings" styleClass="section-label"/>
+                    <TableView fx:id="calendarTable" styleClass="data-table" minHeight="100" prefHeight="180" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="calendarYearColumn" text="Academic Year" prefWidth="130"/>
+                            <TableColumn fx:id="calendarTotalDaysColumn" text="Teaching Days" prefWidth="130"/>
+                            <TableColumn fx:id="calendarStartDateColumn" text="Start Date" prefWidth="150"/>
+                            <TableColumn fx:id="calendarEndDateColumn" text="End Date" prefWidth="150"/>
+                            <TableColumn fx:id="calendarActionsColumn" text="Actions" prefWidth="100"/>
                         </columns>
                     </TableView>
                 </VBox>
