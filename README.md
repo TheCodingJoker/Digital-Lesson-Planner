@@ -54,7 +54,9 @@ The Digital Lesson Planner (DLP) is a desktop application designed to help South
 ## Instructions
 
 ### Prerequisites
+- Windows (database encryption uses Windows DPAPI)
 - Java Development Kit (JDK) 23 or higher
+- JavaFX SDK/runtime configured in your IDE; JavaFX may need to be installed separately
 - NetBeans IDE (recommended) or any Java IDE
 
 ### Installation
@@ -64,9 +66,12 @@ The Digital Lesson Planner (DLP) is a desktop application designed to help South
    git clone https://github.com/iammelvink/NPRT63.git
    ```
 
-2. Open the project in NetBeans IDE
-3. Build the project (Build > Build Project)
-4. Run the application (Run > Run Project)
+2. Open the `DLP` project in NetBeans IDE or another Java IDE and configure JavaFX if it is not bundled with your JDK.
+3. For a fresh setup, back up and remove `DLP/dlp.db.enc` from the clone before the first launch. The application will create a new database and default accounts.
+4. Build the project (Build > Build Project)
+5. Run the application (Run > Run Project)
+
+**Database portability:** DPAPI-protected database files are tied to the Windows account that encrypted them. Do not copy `dlp.db.enc` to another computer or Windows user; transfer data using an export/import method instead.
 
 ### Default Accounts
 
