@@ -4,6 +4,7 @@ import dao.LessonPlanDAO;
 import dao.UserDAO;
 import dao.SchoolCalendarDAO;
 import dao.SchoolEventDAO;
+import util.FeedbackDialog;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.collections.FXCollections;
@@ -22,6 +23,7 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -63,6 +65,8 @@ public class PrincipalDashboardController {
     private Label userNameLabel;
     @FXML
     private Button logoutButton;
+    @FXML
+    private Button feedbackButton;
     @FXML
     private Button navDashboardButton;
     @FXML
@@ -138,6 +142,7 @@ public class PrincipalDashboardController {
     public void initialize() {
         dashboardView = contentArea.getChildren().get(0);
         loadPrincipalName();
+        feedbackButton.setTooltip(new Tooltip("Submit feedback"));
         setupTeacherProgressTable();
         setupSubjectProgressChart();
         loadDashboardData();
@@ -661,6 +666,12 @@ public class PrincipalDashboardController {
             e.printStackTrace();
             showError("Export Error", "Unable to save the progress report: " + e.getMessage());
         }
+    }
+
+    @FXML
+    private void handleFeedback() {
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        FeedbackDialog.showFeedbackDialog(currentUser);
     }
 
     private String csvValue(String value) {

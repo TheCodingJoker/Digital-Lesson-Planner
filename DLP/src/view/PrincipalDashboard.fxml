@@ -48,6 +48,8 @@
                 <Label fx:id="userNameLabel" styleClass="app-header-username"/>
                 <Label text="Principal" styleClass="app-header-userrole"/>
             </VBox>
+            <Button fx:id="feedbackButton" text="&#128172;" onAction="#handleFeedback"
+                    styleClass="header-icon-button" accessibleText="Submit feedback"/>
             <Button fx:id="logoutButton" text="&#10132;" onAction="#handleLogout" styleClass="logout-icon-button"/>
         </HBox>
     </top>

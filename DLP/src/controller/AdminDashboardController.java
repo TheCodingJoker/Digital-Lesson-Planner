@@ -3,7 +3,6 @@ package controller;
 import dao.*;
 import model.*;
 import util.SessionManager;
-import util.FeedbackDialog;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -620,11 +619,6 @@ public class AdminDashboardController {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    @FXML
-    private void handleFeedback() {
-        FeedbackDialog.showFeedbackDialog(currentUser);
     }
 
     private void viewFeedbackDetails(Feedback feedback) {
