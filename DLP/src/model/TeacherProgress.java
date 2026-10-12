@@ -1,5 +1,7 @@
 package model;
 
+import java.util.Locale;
+
 public class TeacherProgress {
     private String teacherId;
     private String teacherName;
@@ -95,6 +97,6 @@ public class TeacherProgress {
     }
     
     public String getProgressDisplay() {
-        return totalLessons == 0 ? "N/A" : String.format("%.1f%%", progressPercentage);
+        return totalLessons == 0 ? "N/A" : String.format(Locale.ROOT, "%.1f%%", progressPercentage);
     }
 }

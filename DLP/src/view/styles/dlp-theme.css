@@ -1006,6 +1006,311 @@
 }
 
 /* ===================== Principal Dashboard ===================== */
+.principal-dashboard {
+    -fx-font-family: "Segoe UI";
+    -fx-background-color: #f4f6f8;
+}
+
+.principal-dashboard .principal-app-header {
+    -fx-spacing: 12;
+    -fx-padding: 8 28;
+    -fx-effect: dropshadow(gaussian, rgba(16, 42, 67, 0.08), 6, 0.08, 0, 2);
+}
+
+.principal-dashboard .principal-app-header .app-header-icon {
+    -fx-background-color: #082d60;
+    -fx-background-radius: 7;
+    -fx-padding: 5 8;
+}
+
+.principal-dashboard .principal-nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #486581;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 10;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.principal-dashboard .principal-nav-button:hover,
+.principal-dashboard .principal-nav-button-active {
+    -fx-background-color: #edf3fa;
+    -fx-text-fill: #082d60;
+}
+
+.principal-dashboard .principal-content {
+    -fx-background-color: #f4f6f8;
+}
+
+.principal-dashboard .principal-scroll-pane,
+.principal-dashboard .principal-scroll-pane > .viewport {
+    -fx-background-color: #f4f6f8;
+}
+
+.principal-dashboard .principal-scroll-pane {
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+
+.principal-dashboard .principal-hero {
+    -fx-background-color: linear-gradient(to right, #082d60, #0b477a);
+    -fx-background-radius: 9;
+    -fx-padding: 17 20;
+    -fx-effect: dropshadow(gaussian, rgba(8, 45, 96, 0.18), 10, 0.14, 0, 3);
+}
+
+.principal-dashboard .principal-hero-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.principal-dashboard .principal-hero-subtitle {
+    -fx-font-size: 11px;
+    -fx-text-fill: #dbeafe;
+}
+
+.principal-dashboard .principal-kpi-row {
+    -fx-alignment: CENTER_LEFT;
+}
+
+.principal-dashboard .principal-kpi-card {
+    -fx-background-color: white;
+    -fx-background-radius: 9;
+    -fx-padding: 13 14;
+    -fx-effect: dropshadow(gaussian, rgba(16, 42, 67, 0.10), 7, 0.10, 0, 2);
+}
+
+.principal-dashboard .principal-kpi-success {
+    -fx-background-color: #f0fdf4;
+}
+
+.principal-dashboard .principal-kpi-warning {
+    -fx-background-color: #fffbeb;
+}
+
+.principal-dashboard .principal-kpi-card .kpi-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #486581;
+    -fx-font-weight: bold;
+}
+
+.principal-dashboard .principal-kpi-card .kpi-value {
+    -fx-font-size: 24px;
+    -fx-text-fill: #102a43;
+}
+
+.principal-dashboard .principal-kpi-card .kpi-caption {
+    -fx-font-size: 9px;
+    -fx-text-fill: #627d98;
+    -fx-wrap-text: true;
+}
+
+.principal-dashboard .principal-kpi-icon {
+    -fx-min-width: 21;
+    -fx-min-height: 21;
+    -fx-max-width: 21;
+    -fx-max-height: 21;
+    -fx-alignment: CENTER;
+    -fx-background-radius: 6;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.principal-dashboard .principal-kpi-icon-blue {
+    -fx-background-color: #eff6ff;
+    -fx-text-fill: #2563eb;
+}
+
+.principal-dashboard .principal-kpi-icon-green {
+    -fx-background-color: #ecfdf5;
+    -fx-text-fill: #059669;
+}
+
+.principal-dashboard .principal-kpi-icon-orange {
+    -fx-background-color: #fff7ed;
+    -fx-text-fill: #ea580c;
+}
+
+.principal-dashboard .principal-panel {
+    -fx-background-color: white;
+    -fx-background-radius: 9;
+    -fx-effect: dropshadow(gaussian, rgba(16, 42, 67, 0.09), 8, 0.10, 0, 2);
+}
+
+.principal-dashboard .principal-chart-row {
+    -fx-alignment: TOP_LEFT;
+}
+
+.principal-dashboard .principal-subject-panel {
+    -fx-min-width: 360;
+}
+
+.principal-dashboard .principal-status-panel {
+    -fx-min-width: 330;
+}
+
+.principal-dashboard .principal-export-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #082d60;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 5 8;
+    -fx-cursor: hand;
+}
+
+.principal-dashboard .principal-export-button:hover {
+    -fx-background-color: #edf3fa;
+    -fx-background-radius: 5;
+}
+
+.principal-dashboard .principal-bar-chart {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.principal-dashboard .principal-bar-chart .chart-plot-background {
+    -fx-background-color: white;
+}
+
+.principal-dashboard .principal-bar-chart .chart-vertical-grid-lines {
+    -fx-stroke: transparent;
+}
+
+.principal-dashboard .principal-bar-chart .chart-horizontal-grid-lines {
+    -fx-stroke: #e8edf2;
+}
+
+.principal-dashboard .principal-bar-chart .axis {
+    -fx-tick-label-fill: #829ab1;
+    -fx-font-size: 9px;
+}
+
+.principal-dashboard .principal-subject-bar {
+    -fx-bar-fill: #082d60;
+}
+
+.principal-dashboard .principal-donut-hole {
+    -fx-fill: white;
+}
+
+.principal-dashboard .principal-donut-total {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
+
+.principal-dashboard .principal-donut-caption {
+    -fx-font-size: 7px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #829ab1;
+}
+
+.principal-dashboard .principal-chart-legend .label {
+    -fx-font-size: 9px;
+    -fx-text-fill: #486581;
+}
+
+.principal-dashboard .principal-legend-dot-green {
+    -fx-fill: #10b981;
+}
+
+.principal-dashboard .principal-legend-dot-amber {
+    -fx-fill: #f59e0b;
+}
+
+.principal-dashboard .principal-legend-dot-red {
+    -fx-fill: #ef4444;
+}
+
+.principal-dashboard .principal-teacher-table {
+    -fx-background-color: transparent;
+}
+
+.principal-dashboard .principal-teacher-table .column-header-background {
+    -fx-background-color: #f8fafc;
+}
+
+.principal-dashboard .principal-teacher-table .column-header .label {
+    -fx-font-size: 8px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #829ab1;
+}
+
+.principal-dashboard .principal-teacher-table .table-row-cell {
+    -fx-cell-size: 45px;
+    -fx-background-color: white;
+}
+
+.principal-dashboard .principal-teacher-table .table-row-cell:odd {
+    -fx-background-color: #fbfcfd;
+}
+
+.principal-dashboard .principal-teacher-table .table-cell {
+    -fx-font-size: 10px;
+    -fx-padding: 5 8;
+}
+
+.principal-dashboard .principal-teacher-avatar {
+    -fx-fill: #082d60;
+}
+
+.principal-dashboard .principal-teacher-initials {
+    -fx-font-size: 7px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.principal-dashboard .principal-teacher-name,
+.principal-dashboard .principal-progress-value {
+    -fx-font-size: 9px;
+    -fx-text-fill: #334e68;
+}
+
+.principal-dashboard .principal-progress-high .bar {
+    -fx-background-color: #16a34a;
+}
+
+.principal-dashboard .principal-progress-mid .bar {
+    -fx-background-color: #f59e0b;
+}
+
+.principal-dashboard .principal-progress-low .bar {
+    -fx-background-color: #ef4444;
+}
+
+.principal-dashboard .principal-details-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #082d60;
+    -fx-font-size: 9px;
+    -fx-padding: 4 6;
+    -fx-cursor: hand;
+}
+
+.principal-dashboard .principal-details-button:hover {
+    -fx-background-color: #edf3fa;
+    -fx-background-radius: 4;
+}
+
+.principal-dashboard .chart-pie {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+.principal-dashboard .default-color0.chart-pie {
+    -fx-pie-color: #16a34a;
+}
+
+.principal-dashboard .default-color1.chart-pie {
+    -fx-pie-color: #d97706;
+}
+
+.principal-dashboard .default-color2.chart-pie {
+    -fx-pie-color: #dc2626;
+}
+
 .kpi-card {
     -fx-background-color: white;
     -fx-background-radius: 12;

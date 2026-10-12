@@ -6,6 +6,7 @@ import dao.SchoolCalendarDAO;
 import dao.SchoolEventDAO;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.collections.FXCollections;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -13,6 +14,11 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.PieChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -22,8 +28,11 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import model.LessonPlan;
@@ -40,6 +49,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class PrincipalDashboardController {
 
@@ -59,6 +71,8 @@ public class PrincipalDashboardController {
     private Button navReportsButton;
     @FXML
     private StackPane contentArea;
+    @FXML
+    private FlowPane principalKpiContainer;
 
     // KPI Labels
     @FXML
@@ -70,40 +84,26 @@ public class PrincipalDashboardController {
     @FXML
     private Label needSupportLabel;
 
-    // Status Labels
+    // Completion band pie KPI
     @FXML
-    private Label onTrackPercentLabel;
+    private PieChart completionBandPieChart;
     @FXML
-    private Label atRiskPercentLabel;
+    private Label completionBandEmptyLabel;
     @FXML
-    private Label behindPercentLabel;
+    private Label completionBandTotalLabel;
+    @FXML
+    private Label highCompletionLegendLabel;
+    @FXML
+    private Label moderateCompletionLegendLabel;
+    @FXML
+    private Label lowCompletionLegendLabel;
 
-    // Subject Progress Labels
     @FXML
-    private Label mathProgressLabel;
+    private BarChart<String, Number> subjectProgressChart;
     @FXML
-    private Label scienceProgressLabel;
+    private CategoryAxis subjectAxis;
     @FXML
-    private Label languageProgressLabel;
-    @FXML
-    private Label humanitiesProgressLabel;
-
-    // Progress Bars
-    @FXML
-    private ProgressBar mathProgressBar;
-    @FXML
-    private ProgressBar scienceProgressBar;
-    @FXML
-    private ProgressBar languageProgressBar;
-    @FXML
-    private ProgressBar humanitiesProgressBar;
-    @FXML
-    private ProgressBar onTrackProgressBar;
-    @FXML
-    private ProgressBar atRiskProgressBar;
-    @FXML
-    private ProgressBar behindProgressBar;
-
+    private NumberAxis subjectProgressAxis;
     // Teacher Progress Table
     @FXML
     private TableView<TeacherProgress> teacherProgressTable;
@@ -117,8 +117,6 @@ public class PrincipalDashboardController {
     private TableColumn<TeacherProgress, String> progressColumn;
     @FXML
     private TableColumn<TeacherProgress, String> lessonsColumn;
-    @FXML
-    private TableColumn<TeacherProgress, String> statusColumn;
     @FXML
     private TableColumn<TeacherProgress, String> actionsColumn;
 
@@ -143,9 +141,33 @@ public class PrincipalDashboardController {
         dashboardView = contentArea.getChildren().get(0);
         loadPrincipalName();
         setupTeacherProgressTable();
+        setupSubjectProgressChart();
         loadDashboardData();
         setupActivityMonitoring();
         setActiveNavigation(navDashboardButton);
+        principalKpiContainer.widthProperty().addListener(
+            (observable, oldWidth, newWidth) -> resizeKpiCards(newWidth.doubleValue()));
+        resizeKpiCards(principalKpiContainer.getWidth());
+    }
+
+    private void setupSubjectProgressChart() {
+        subjectProgressAxis.setTickLabelFormatter(new NumberAxis.DefaultFormatter(subjectProgressAxis, "", "%"));
+        subjectAxis.setTickLabelRotation(35);
+        subjectProgressChart.setLegendVisible(false);
+        subjectProgressChart.setAnimated(false);
+        subjectProgressChart.setVerticalGridLinesVisible(false);
+        subjectProgressChart.setHorizontalGridLinesVisible(true);
+    }
+
+    private void resizeKpiCards(double availableWidth) {
+        if (availableWidth <= 0) return;
+        int columns = availableWidth >= 4 * 220 + 3 * 16 ? 4 : availableWidth >= 2 * 200 + 16 ? 2 : 1;
+        double cardWidth = Math.max(0, (availableWidth - (columns - 1) * 16) / columns);
+        for (Node card : principalKpiContainer.getChildren()) {
+            if (card instanceof Region) {
+                ((Region) card).setPrefWidth(cardWidth);
+            }
+        }
     }
 
     private String formatStatus(String status) {
@@ -222,7 +244,33 @@ public class PrincipalDashboardController {
         gradeColumn.setCellValueFactory(new PropertyValueFactory<>("grade"));
         progressColumn.setCellValueFactory(new PropertyValueFactory<>("progressDisplay"));
         lessonsColumn.setCellValueFactory(new PropertyValueFactory<>("lessonCountDisplay"));
-        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        teacherNameColumn.setCellFactory(column -> new TableCell<>() {
+            private final Circle avatar = new Circle(9);
+            private final Label initials = new Label();
+            private final Label name = new Label();
+            private final HBox content = new HBox(8, new StackPane(avatar, initials), name);
+
+            {
+                avatar.getStyleClass().add("principal-teacher-avatar");
+                initials.getStyleClass().add("principal-teacher-initials");
+                name.getStyleClass().add("principal-teacher-name");
+                content.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            }
+
+            @Override
+            protected void updateItem(String teacherName, boolean empty) {
+                super.updateItem(teacherName, empty);
+                if (empty || teacherName == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    initials.setText(getTeacherInitials(teacherName));
+                    name.setText(teacherName);
+                    setGraphic(content);
+                    setText(null);
+                }
+            }
+        });
 
         // Custom cell factory for progress column with progress bar
         progressColumn.setCellFactory(column -> new TableCell<TeacherProgress, String>() {
@@ -231,8 +279,11 @@ public class PrincipalDashboardController {
             private final HBox container = new HBox(8);
             
             {
-                progressBar.setPrefWidth(80);
+                progressBar.setPrefWidth(86);
+                progressBar.setPrefHeight(7);
                 container.getChildren().addAll(progressBar, progressLabel);
+                container.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                progressLabel.getStyleClass().add("principal-progress-value");
             }
 
             @Override
@@ -245,6 +296,11 @@ public class PrincipalDashboardController {
                     try {
                         double progress = Double.parseDouble(progressDisplay.replace("%", ""));
                         progressBar.setProgress(progress / 100);
+                        progressBar.getStyleClass().removeAll(
+                            "principal-progress-low", "principal-progress-mid", "principal-progress-high");
+                        progressBar.getStyleClass().add(progress >= 70
+                            ? "principal-progress-high" : progress >= 50
+                                ? "principal-progress-mid" : "principal-progress-low");
                         progressLabel.setText(progressDisplay);
                         setText(null);
                         setGraphic(container);
@@ -256,15 +312,12 @@ public class PrincipalDashboardController {
             }
         });
 
-        // Custom cell factory for status column with color coding
-        applyStatusCellFormatting(statusColumn);
-
         // Actions column with View Details button
         actionsColumn.setCellFactory(column -> new TableCell<TeacherProgress, String>() {
             private final Button viewButton = new Button("View Details");
             
             {
-                viewButton.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 11px; -fx-padding: 4 8;");
+                viewButton.getStyleClass().add("principal-details-button");
                 viewButton.setOnAction(event -> {
                     TeacherProgress progress = getTableView().getItems().get(getIndex());
                     showTeacherDetails(progress);
@@ -365,7 +418,7 @@ public class PrincipalDashboardController {
             totalTeachersLabel.setText(String.valueOf(totalTeachers));
             
             double averageProgress = teachersWithLessons > 0 ? totalProgress / teachersWithLessons : 0;
-            averageProgressLabel.setText(String.format("%.1f%%", averageProgress));
+            averageProgressLabel.setText(String.format(Locale.ROOT, "%.1f%%", averageProgress));
             
             onTrackLabel.setText(String.valueOf(highCompletionCount));
             needSupportLabel.setText(String.valueOf(
@@ -374,8 +427,8 @@ public class PrincipalDashboardController {
             // Aggregate every teacher's lessons by subject area.
             updateSubjectProgress(allLessons);
             
-            // Update progress bars
-            updateProgressBars(teachersWithLessons, highCompletionCount,
+            // Update completion-band pie KPI
+            updateCompletionBandPie(teachersWithLessons, highCompletionCount,
                 moderateCompletionCount, lowCompletionCount);
 
             // Populate table
@@ -409,72 +462,112 @@ public class PrincipalDashboardController {
     }
 
     private void updateSubjectProgress(List<LessonPlan> lessons) {
-        double mathProgress = 0;
-        double scienceProgress = 0;
-        double languageProgress = 0;
-        double humanitiesProgress = 0;
-        int mathCount = 0;
-        int scienceCount = 0;
-        int languageCount = 0;
-        int humanitiesCount = 0;
+        Map<String, SubjectProgressSummary> subjectProgress =
+            new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         for (LessonPlan lesson : lessons) {
-            String subject = lesson.getSubject() == null ? "" : lesson.getSubject().toLowerCase();
-            double progress = LessonPlan.STATUS_COMPLETED.equals(lesson.getStatus()) ? 100 : 0;
-            if (subject.contains("math")) {
-                mathProgress += progress;
-                mathCount++;
-            } else if (subject.contains("science") || subject.contains("physics") || subject.contains("chemistry") || subject.contains("biology")) {
-                scienceProgress += progress;
-                scienceCount++;
-            } else if (subject.contains("english") || subject.contains("language") || subject.contains("afrikaans")) {
-                languageProgress += progress;
-                languageCount++;
-            } else {
-                humanitiesProgress += progress;
-                humanitiesCount++;
-            }
+            String subject = lesson.getSubject();
+            if (subject == null || subject.isBlank()) continue;
+
+            String subjectName = subject.trim();
+            SubjectProgressSummary summary = subjectProgress.computeIfAbsent(
+                subjectName, SubjectProgressSummary::new);
+            summary.totalLessons++;
+            if (LessonPlan.STATUS_COMPLETED.equals(lesson.getStatus())) summary.completedLessons++;
         }
 
-        double mathPercent = mathCount > 0 ? mathProgress / mathCount : 0;
-        double sciencePercent = scienceCount > 0 ? scienceProgress / scienceCount : 0;
-        double languagePercent = languageCount > 0 ? languageProgress / languageCount : 0;
-        double humanitiesPercent = humanitiesCount > 0 ? humanitiesProgress / humanitiesCount : 0;
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        for (SubjectProgressSummary summary : subjectProgress.values()) {
+            double progressPercent = summary.completedLessons * 100.0 / summary.totalLessons;
+            addSubjectProgressData(series, summary.subject, progressPercent);
+        }
+        subjectAxis.setCategories(FXCollections.observableArrayList(
+            subjectProgress.keySet().stream().toList()));
+        subjectProgressChart.setData(FXCollections.observableArrayList(series));
+    }
 
-        mathProgressLabel.setText(String.format("%.0f%%", mathPercent));
-        scienceProgressLabel.setText(String.format("%.0f%%", sciencePercent));
-        languageProgressLabel.setText(String.format("%.0f%%", languagePercent));
-        humanitiesProgressLabel.setText(String.format("%.0f%%", humanitiesPercent));
+    private static final class SubjectProgressSummary {
+        private final String subject;
+        private int completedLessons;
+        private int totalLessons;
 
-        mathProgressBar.setProgress(mathPercent / 100);
-        scienceProgressBar.setProgress(sciencePercent / 100);
-        languageProgressBar.setProgress(languagePercent / 100);
-        humanitiesProgressBar.setProgress(humanitiesPercent / 100);
+        private SubjectProgressSummary(String subject) {
+            this.subject = subject;
+        }
+    }
+
+    private void addSubjectProgressData(XYChart.Series<String, Number> series, String subject, double progress) {
+        XYChart.Data<String, Number> data = new XYChart.Data<>(subject, progress);
+        data.nodeProperty().addListener((observable, oldNode, node) -> {
+            if (node != null) node.getStyleClass().add("principal-subject-bar");
+        });
+        series.getData().add(data);
     }
     
-    private void updateProgressBars(
+    private void updateCompletionBandPie(
             int totalTeachers, int highCompletionCount, int moderateCompletionCount, int lowCompletionCount) {
-        if (totalTeachers > 0) {
-            double highCompletionPercent = highCompletionCount * 100.0 / totalTeachers;
-            double moderateCompletionPercent = moderateCompletionCount * 100.0 / totalTeachers;
-            double lowCompletionPercent = lowCompletionCount * 100.0 / totalTeachers;
+        double highCompletionPercent = getSharePercent(highCompletionCount, totalTeachers);
+        double moderateCompletionPercent = getSharePercent(moderateCompletionCount, totalTeachers);
+        double lowCompletionPercent = getSharePercent(lowCompletionCount, totalTeachers);
 
-            onTrackProgressBar.setProgress(highCompletionPercent / 100);
-            atRiskProgressBar.setProgress(moderateCompletionPercent / 100);
-            behindProgressBar.setProgress(lowCompletionPercent / 100);
+        completionBandTotalLabel.setText(String.valueOf(totalTeachers));
+        highCompletionLegendLabel.setText(formatCompletionLegend(
+            "On Track", highCompletionCount, highCompletionPercent));
+        moderateCompletionLegendLabel.setText(formatCompletionLegend(
+            "At Risk", moderateCompletionCount, moderateCompletionPercent));
+        lowCompletionLegendLabel.setText(formatCompletionLegend(
+            "Behind", lowCompletionCount, lowCompletionPercent));
 
-            onTrackPercentLabel.setText(String.format("%.0f%%", highCompletionPercent));
-            atRiskPercentLabel.setText(String.format("%.0f%%", moderateCompletionPercent));
-            behindPercentLabel.setText(String.format("%.0f%%", lowCompletionPercent));
-        } else {
-            onTrackProgressBar.setProgress(0);
-            atRiskProgressBar.setProgress(0);
-            behindProgressBar.setProgress(0);
-
-            onTrackPercentLabel.setText("0%");
-            atRiskPercentLabel.setText("0%");
-            behindPercentLabel.setText("0%");
+        completionBandEmptyLabel.setVisible(totalTeachers == 0);
+        completionBandEmptyLabel.setManaged(totalTeachers == 0);
+        completionBandPieChart.setVisible(totalTeachers > 0);
+        completionBandPieChart.setManaged(totalTeachers > 0);
+        if (totalTeachers == 0) {
+            completionBandPieChart.setData(FXCollections.observableArrayList());
+            return;
         }
+
+        List<PieChart.Data> slices = new ArrayList<>();
+        addCompletionBandSlice(slices, "High completion", highCompletionCount, "#16a34a");
+        addCompletionBandSlice(slices, "Moderate completion", moderateCompletionCount, "#d97706");
+        addCompletionBandSlice(slices, "Low completion", lowCompletionCount, "#dc2626");
+        completionBandPieChart.setData(FXCollections.observableArrayList(slices));
+        completionBandPieChart.setAccessibleText(String.format(
+            Locale.ROOT,
+            "Completion bands: high %d percent, moderate %d percent, low %d percent",
+            Math.round(highCompletionPercent),
+            Math.round(moderateCompletionPercent),
+            Math.round(lowCompletionPercent)));
+    }
+
+    private double getSharePercent(int count, int total) {
+        return total == 0 ? 0 : count * 100.0 / total;
+    }
+
+    private String formatCompletionLegend(String title, int count, double percentage) {
+        return String.format(Locale.ROOT, "%s: %d (%.0f%%)", title, count, percentage);
+    }
+
+    private String getTeacherInitials(String teacherName) {
+        String normalizedName = teacherName == null ? "" : teacherName.trim();
+        if (normalizedName.isEmpty()) return "?";
+        String[] nameParts = normalizedName.split("\\s+");
+        if (nameParts.length > 1) {
+            return (nameParts[0].substring(0, 1) + nameParts[nameParts.length - 1].substring(0, 1))
+                .toUpperCase(Locale.ROOT);
+        }
+        return teacherName.substring(0, Math.min(2, teacherName.length())).toUpperCase(Locale.ROOT);
+    }
+
+    private void addCompletionBandSlice(List<PieChart.Data> slices, String label, int count, String color) {
+        if (count == 0) return;
+        PieChart.Data slice = new PieChart.Data(label, count);
+        slice.nodeProperty().addListener((observable, oldNode, node) -> {
+            if (node != null) {
+                node.setStyle("-fx-pie-color: " + color + "; -fx-border-color: transparent; -fx-border-width: 0;");
+            }
+        });
+        slices.add(slice);
     }
 
     // =========================================================
@@ -630,9 +723,9 @@ public class PrincipalDashboardController {
 
     private void setActiveNavigation(Button activeButton) {
         for (Button button : List.of(navDashboardButton, navCalendarButton, navReportsButton)) {
-            button.getStyleClass().remove("nav-button-active");
+            button.getStyleClass().remove("principal-nav-button-active");
         }
-        activeButton.getStyleClass().add("nav-button-active");
+        activeButton.getStyleClass().add("principal-nav-button-active");
     }
 
     private TableView<TeacherProgress> createTeacherTable() {
