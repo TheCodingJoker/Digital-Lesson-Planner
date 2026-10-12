@@ -1,8 +1,8 @@
 package util;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -23,15 +23,12 @@ public class DatabaseConnection {
      * Initializes the database by decrypting if necessary.
      * This should be called once at application startup.
      */
-    public static void initializeDatabase() {
+    public static void initializeDatabase() throws IOException {
         try {
             File encryptedFile = new File(ENCRYPTED_DB_PATH);
             File tempFile = new File(TEMP_DB_PATH);
 
-            // Clean up any existing temp file
-            if (tempFile.exists()) {
-                tempFile.delete();
-            }
+            Files.deleteIfExists(tempFile.toPath());
 
             // If encrypted database exists, decrypt it to temp file
             if (encryptedFile.exists()) {
@@ -49,6 +46,7 @@ public class DatabaseConnection {
         } catch (Exception e) {
             errorLogger.logError("DatabaseConnection", "initializeDatabase", "Failed to initialize database encryption", e);
             System.err.println("Database encryption initialization failed: " + e.getMessage());
+            throw new IOException("Could not initialize the protected database.", e);
         }
     }
 
@@ -72,13 +70,13 @@ public class DatabaseConnection {
                 DatabaseEncryption.encryptFile(sourcePath, ENCRYPTED_DB_PATH);
 
                 // Delete the unencrypted/temp file
-                new File(sourcePath).delete();
+                Files.delete(new File(sourcePath).toPath());
 
                 // Also delete the other variant if it exists
                 if (sourcePath.equals(TEMP_DB_PATH) && unencryptedFile.exists()) {
-                    unencryptedFile.delete();
+                    Files.delete(unencryptedFile.toPath());
                 } else if (sourcePath.equals(UNENCRYPTED_DB_PATH) && tempFile.exists()) {
-                    tempFile.delete();
+                    Files.delete(tempFile.toPath());
                 }
 
                 errorLogger.logInfo("DatabaseConnection", "encryptAndClose", "Database encrypted successfully.");

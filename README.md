@@ -80,16 +80,22 @@ The application creates default accounts on first run:
 
 The application uses SQLite with the following features:
 - Local database file storage
-- AES-256 encryption at rest
+- Windows DPAPI protection for the database file when the application shuts down
 - CAPS Data Snapshots for historical accuracy
 - Automatic schema migration
+
+DPAPI protects the database for the current Windows user account and Windows
+installation. Existing database files from the previous AES-CBC implementation
+are still supported and are migrated to DPAPI protection the next time the
+application shuts down. While the application is running, SQLite uses a temporary
+plaintext database file; the DPAPI-protected file is the at-rest copy.
 
 ## Security
 
 - Argon2 password hashing (OWASP-recommended)
 - Role-based access control (RBAC)
 - 15-minute auto-logout for inactivity
-- Database encryption using AES-256
+- Database file protected with Windows DPAPI for the current user (see the Database section)
 - Tamper-proof audit logging
 - POPIA compliance considerations
 
