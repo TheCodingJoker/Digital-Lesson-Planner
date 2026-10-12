@@ -37,17 +37,30 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import com.lowagie.text.Document;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 import model.LessonPlan;
 import model.TeacherProgress;
 import model.User;
 import model.SchoolCalendar;
 import model.SchoolEvent;
 import util.SessionManager;
+import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFTable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -610,10 +623,12 @@ public class PrincipalDashboardController {
         Label summary = new Label("Teachers: " + currentTeacherProgress.size()
             + "    |    Completed lessons: " + completed + " / " + planned);
         summary.getStyleClass().add("section-label");
-        Button exportButton = new Button("Export CSV");
-        exportButton.getStyleClass().add("primary-button");
-        exportButton.setOnAction(event -> handleExportReport());
-        HBox toolbar = new HBox(12, summary, new Pane(), exportButton);
+        Label exportLabel = new Label("Export:");
+        Button csvButton = createReportExportButton("CSV", "csv");
+        Button pdfButton = createReportExportButton("PDF", "pdf");
+        Button wordButton = createReportExportButton("Word", "docx");
+        HBox toolbar = new HBox(10, summary, new Pane(), exportLabel,
+            csvButton, pdfButton, wordButton);
         HBox.setHgrow(toolbar.getChildren().get(1), Priority.ALWAYS);
 
         TableView<TeacherProgress> table = createTeacherTable();
@@ -630,42 +645,187 @@ public class PrincipalDashboardController {
 
     @FXML
     private void handleExportReport() {
+        javafx.scene.control.ChoiceDialog<String> formatDialog =
+            new javafx.scene.control.ChoiceDialog<>("CSV", List.of("CSV", "PDF", "Word"));
+        formatDialog.setTitle("Export Principal Progress Report");
+        formatDialog.setHeaderText("Choose a report format");
+        formatDialog.setContentText("Format:");
+        formatDialog.showAndWait().ifPresent(format -> exportReport(
+            "CSV".equals(format) ? "csv" : "Word".equals(format) ? "docx" : "pdf"));
+    }
+
+    private Button createReportExportButton(String text, String format) {
+        Button button = new Button(text);
+        button.getStyleClass().add("primary-button");
+        button.setOnAction(event -> exportReport(format));
+        return button;
+    }
+
+    private void exportReport(String format) {
         if (!dashboardDataLoaded) loadDashboardData();
         if (!dashboardDataLoaded) return;
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Export Principal Progress Report");
-        chooser.setInitialFileName("teacher-progress-report.csv");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV files", "*.csv"));
-        File file = chooser.showSaveDialog(contentArea.getScene().getWindow());
-        if (file == null) return;
-        if (!file.getName().toLowerCase().endsWith(".csv")) {
-            file = new File(file.getParentFile(), file.getName() + ".csv");
+
+        String extension;
+        String description;
+        switch (format) {
+            case "pdf":
+                extension = "pdf";
+                description = "PDF files";
+                break;
+            case "docx":
+                extension = "docx";
+                description = "Word documents";
+                break;
+            default:
+                extension = "csv";
+                description = "CSV files";
+                break;
         }
 
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export Principal Progress Report");
+        chooser.setInitialFileName("teacher-progress-report." + extension);
+        chooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter(description, "*." + extension));
+        File file = chooser.showSaveDialog(contentArea.getScene().getWindow());
+        if (file == null) return;
+        if (!file.getName().toLowerCase(Locale.ROOT).endsWith("." + extension)) {
+            file = new File(file.getParentFile(), file.getName() + "." + extension);
+        }
+
+        try {
+            switch (extension) {
+                case "pdf":
+                    writePdfReport(file);
+                    break;
+                case "docx":
+                    writeWordReport(file);
+                    break;
+                default:
+                    writeCsvReport(file);
+                    break;
+            }
+            showSuccessMessage("Progress report exported to " + file.getAbsolutePath());
+        } catch (IOException | com.lowagie.text.DocumentException e) {
+            showError("Export Error", "Unable to save the progress report: " + e.getMessage());
+        }
+    }
+
+    private void writeCsvReport(File file) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
             writer.write("Teacher,Subject,Grade,Completed Lessons,Total Lessons,Progress,Status");
             writer.newLine();
-            for (TeacherProgress progress : currentTeacherProgress) {
-                writer.write(csvValue(progress.getTeacherName()));
-                writer.write(",");
-                writer.write(csvValue(progress.getSubject()));
-                writer.write(",");
-                writer.write(csvValue(progress.getGrade()));
-                writer.write(",");
-                writer.write(String.valueOf(progress.getCompletedLessons()));
-                writer.write(",");
-                writer.write(String.valueOf(progress.getTotalLessons()));
-                writer.write(",");
-                writer.write(csvValue(progress.getProgressDisplay()));
-                writer.write(",");
-                writer.write(csvValue(formatStatus(progress.getStatus())));
-                writer.newLine();
-            }
-            showSuccessMessage("Progress report exported to " + file.getAbsolutePath());
-        } catch (IOException e) {
-            e.printStackTrace();
-            showError("Export Error", "Unable to save the progress report: " + e.getMessage());
+            for (TeacherProgress progress : currentTeacherProgress) writeReportRow(writer, progress);
         }
+    }
+
+    private void writeReportRow(BufferedWriter writer, TeacherProgress progress) throws IOException {
+        writer.write(csvValue(progress.getTeacherName()));
+        writer.write(",");
+        writer.write(csvValue(progress.getSubject()));
+        writer.write(",");
+        writer.write(csvValue(progress.getGrade()));
+        writer.write(",");
+        writer.write(String.valueOf(progress.getCompletedLessons()));
+        writer.write(",");
+        writer.write(String.valueOf(progress.getTotalLessons()));
+        writer.write(",");
+        writer.write(csvValue(progress.getProgressDisplay()));
+        writer.write(",");
+        writer.write(csvValue(formatStatus(progress.getStatus())));
+        writer.newLine();
+    }
+
+    private void writePdfReport(File file) throws IOException, com.lowagie.text.DocumentException {
+        Document document = new Document(PageSize.A4.rotate());
+        try (FileOutputStream output = new FileOutputStream(file)) {
+            PdfWriter.getInstance(document, output);
+            document.open();
+            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
+            Paragraph title = new Paragraph("Principal Progress Report", titleFont);
+            title.setAlignment(Paragraph.ALIGN_CENTER);
+            document.add(title);
+            document.add(new Paragraph("Generated: "
+                + java.time.LocalDateTime.now().format(
+                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))));
+            document.add(new Paragraph(reportSummary()));
+            document.add(new Paragraph(" "));
+
+            PdfPTable table = new PdfPTable(7);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[] {2.1f, 1.7f, 1.0f, 1.3f, 1.2f, 1.0f, 1.2f});
+            for (String heading : reportHeadings()) table.addCell(heading);
+            for (TeacherProgress progress : currentTeacherProgress) {
+                for (String value : reportValues(progress)) table.addCell(value);
+            }
+            document.add(table);
+            document.close();
+        } finally {
+            if (document.isOpen()) document.close();
+        }
+    }
+
+    private void writeWordReport(File file) throws IOException {
+        try (XWPFDocument document = new XWPFDocument()) {
+            XWPFParagraph title = document.createParagraph();
+            title.setAlignment(ParagraphAlignment.CENTER);
+            XWPFRun titleRun = title.createRun();
+            titleRun.setText("Principal Progress Report");
+            titleRun.setBold(true);
+            titleRun.setFontSize(18);
+
+            XWPFParagraph generated = document.createParagraph();
+            generated.createRun().setText("Generated: "
+                + java.time.LocalDateTime.now().format(
+                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+            document.createParagraph().createRun().setText(reportSummary());
+
+            XWPFTable table = document.createTable(currentTeacherProgress.size() + 1, 7);
+            for (int column = 0; column < reportHeadings().length; column++) {
+                XWPFRun header = table.getRow(0).getCell(column).getParagraphs().get(0).createRun();
+                header.setText(reportHeadings()[column]);
+                header.setBold(true);
+            }
+            for (int row = 0; row < currentTeacherProgress.size(); row++) {
+                String[] values = reportValues(currentTeacherProgress.get(row));
+                for (int column = 0; column < values.length; column++) {
+                    table.getRow(row + 1).getCell(column).setText(values[column]);
+                }
+            }
+
+            try (FileOutputStream output = new FileOutputStream(file)) {
+                document.write(output);
+            }
+        }
+    }
+
+    private String reportSummary() {
+        int completed = currentTeacherProgress.stream()
+            .mapToInt(TeacherProgress::getCompletedLessons).sum();
+        int planned = currentTeacherProgress.stream()
+            .mapToInt(TeacherProgress::getTotalLessons).sum();
+        return "Teachers: " + currentTeacherProgress.size()
+            + " | Completed lessons: " + completed + " / " + planned;
+    }
+
+    private String[] reportHeadings() {
+        return new String[] {
+            "Teacher", "Subject", "Grade", "Completed Lessons",
+            "Total Lessons", "Progress", "Status"
+        };
+    }
+
+    private String[] reportValues(TeacherProgress progress) {
+        return new String[] {
+            safeText(progress.getTeacherName()), safeText(progress.getSubject()),
+            safeText(progress.getGrade()), String.valueOf(progress.getCompletedLessons()),
+            String.valueOf(progress.getTotalLessons()), progress.getProgressDisplay(),
+            formatStatus(progress.getStatus())
+        };
+    }
+
+    private String safeText(String value) {
+        return value == null ? "" : value;
     }
 
     @FXML
