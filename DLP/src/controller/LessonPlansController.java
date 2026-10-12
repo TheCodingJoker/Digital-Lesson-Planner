@@ -31,6 +31,7 @@ public class LessonPlansController {
     @FXML private TableColumn<LessonPlan, String> subjectColumn;
     @FXML private TableColumn<LessonPlan, String> gradeColumn;
     @FXML private TableColumn<LessonPlan, String> termColumn;
+    @FXML private TableColumn<LessonPlan, String> capsCodeColumn;
     @FXML private TableColumn<LessonPlan, String> dateColumn;
     @FXML private TableColumn<LessonPlan, String> statusColumn;
     @FXML private TableColumn<LessonPlan, Void> actionsColumn;
@@ -49,6 +50,9 @@ public class LessonPlansController {
         termColumn.setCellValueFactory(data ->
             new javafx.beans.property.SimpleStringProperty(
                 data.getValue().getTerm() == null ? "" : data.getValue().getTerm()));
+        capsCodeColumn.setCellValueFactory(data ->
+            new javafx.beans.property.SimpleStringProperty(
+                data.getValue().getCapsCode() == null ? "" : data.getValue().getCapsCode()));
         dateColumn.setCellValueFactory(data ->
             new javafx.beans.property.SimpleStringProperty(formatDate(data.getValue().getLessonDate())));
         statusColumn.setCellValueFactory(data ->

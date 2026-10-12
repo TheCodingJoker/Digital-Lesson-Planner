@@ -10,7 +10,10 @@ import java.util.UUID;
 public class CAPSSnapshotDAO {
     
     public boolean createSnapshot(CAPSEntry capsEntry) {
-        String snapshotId = UUID.randomUUID().toString();
+        return createSnapshot(capsEntry, UUID.randomUUID().toString());
+    }
+
+    public boolean createSnapshot(CAPSEntry capsEntry, String snapshotId) {
         String capturedAt = getCurrentTimestamp();
         String originalData = capsEntryToJson(capsEntry);
         

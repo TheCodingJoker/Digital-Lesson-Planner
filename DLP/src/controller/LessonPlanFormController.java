@@ -20,7 +20,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.control.TextField;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class LessonPlanFormController {
@@ -31,7 +33,7 @@ public class LessonPlanFormController {
     @FXML private ComboBox<String> termCombo;
     @FXML private TextField durationField;
     @FXML private DatePicker lessonDatePicker;
-    @FXML private TextField topicField;
+    @FXML private ComboBox<String> topicCombo;
     @FXML private TextArea objectivesArea;
     @FXML private TextArea teachingActivitiesArea;
     @FXML private TextArea assessmentArea;
@@ -46,6 +48,9 @@ public class LessonPlanFormController {
     private LessonPlanDAO lessonPlanDAO;
     private UnsavedChangesTracker unsavedChangesTracker;
     private boolean autoPopulateEnabled = true;
+    private boolean populatingForm;
+    private CAPSEntry selectedCapsEntry;
+    private final Map<String, CAPSEntry> capsTopicOptions = new LinkedHashMap<>();
 
     @FXML
     public void initialize() {
@@ -68,6 +73,8 @@ public class LessonPlanFormController {
         ));
 
         termCombo.setItems(FXCollections.observableArrayList("Term 1", "Term 2", "Term 3", "Term 4"));
+        topicCombo.setEditable(true);
+        topicCombo.setPromptText("Choose a CAPS topic or enter one");
 
         lessonDatePicker.setValue(LocalDate.now());
 
@@ -81,15 +88,34 @@ public class LessonPlanFormController {
     public void populate(LessonPlan plan) {
         this.editingLessonPlanId = plan.getLessonPlanId();
         this.editingStatus = plan.getStatus();
+        populatingForm = true;
         gradeCombo.setValue(plan.getGradeLevel());
         subjectCombo.setValue(plan.getSubject());
         termCombo.setValue(plan.getTerm());
         durationField.setText(String.valueOf(plan.getDurationMinutes() > 0 ? plan.getDurationMinutes() : 60));
-        topicField.setText(plan.getTopic());
         objectivesArea.setText(plan.getObjectives());
         teachingActivitiesArea.setText(plan.getTeachingActivities());
         assessmentArea.setText(plan.getAssessmentMethod());
         resourcesField.setText(plan.getResources());
+        populatingForm = false;
+        refreshCAPSTopics();
+        populatingForm = true;
+        selectedCapsEntry = plan.getCapsCode() == null ? null : capsEntryDAO.findByCapsCode(plan.getCapsCode());
+        if (selectedCapsEntry != null && capsTopicOptions.values().stream()
+                .anyMatch(option -> option.getCapsCode().equals(selectedCapsEntry.getCapsCode()))) {
+            String option = capsTopicOptions.entrySet().stream()
+                .filter(item -> item.getValue().getCapsCode().equals(selectedCapsEntry.getCapsCode()))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+            topicCombo.setValue(option);
+            topicCombo.getEditor().setText(option);
+        } else {
+            selectedCapsEntry = null;
+            topicCombo.setValue(plan.getTopic());
+            topicCombo.getEditor().setText(plan.getTopic());
+        }
+        populatingForm = false;
 
         if (plan.getLessonDate() != null && !plan.getLessonDate().isEmpty()) {
             try {
@@ -116,7 +142,7 @@ public class LessonPlanFormController {
             errorLabel.setText("Please select a term.");
             return false;
         }
-        if (topicField.getText() == null || topicField.getText().trim().isEmpty()) {
+        if (getTopicText().isEmpty()) {
             errorLabel.setText("Please enter a topic.");
             return false;
         }
@@ -142,7 +168,9 @@ public class LessonPlanFormController {
     /** Builds a LessonPlan from the current field values. Call isValid() first. */
     public LessonPlan toLessonPlan(String teacherId) {
         String id = editingLessonPlanId != null ? editingLessonPlanId : UUID.randomUUID().toString();
-        String topic = topicField.getText().trim();
+        String topic = selectedCapsEntry == null
+            ? getTopicText()
+            : selectedCapsEntry.getTopic();
 
         int duration = 60;
         if (durationField.getText() != null && !durationField.getText().trim().isEmpty()) {
@@ -157,6 +185,9 @@ public class LessonPlanFormController {
         plan.setGradeLevel(gradeCombo.getValue());
         plan.setTerm(termCombo.getValue());
         plan.setTopic(topic);
+        plan.setCapsCode(selectedCapsEntry == null ? null : selectedCapsEntry.getCapsCode());
+        plan.setSelectedCapsEntry(selectedCapsEntry);
+        plan.setCapsEntrySelectionChanged(true);
         plan.setDurationMinutes(duration);
         plan.setObjectives(emptyToNull(objectivesArea.getText()));
         plan.setTeachingActivities(emptyToNull(teachingActivitiesArea.getText()));
@@ -172,56 +203,97 @@ public class LessonPlanFormController {
     }
     
     private void setupCAPSAutoPopulate() {
-        // Add listeners to trigger CAPS auto-populate
-        gradeCombo.setOnAction(event -> autoPopulateCAPS());
-        subjectCombo.setOnAction(event -> autoPopulateCAPS());
-        termCombo.setOnAction(event -> autoPopulateCAPS());
+        gradeCombo.valueProperty().addListener((obs, oldValue, newValue) -> handleCAPSFilterChange());
+        subjectCombo.valueProperty().addListener((obs, oldValue, newValue) -> handleCAPSFilterChange());
+        termCombo.valueProperty().addListener((obs, oldValue, newValue) -> handleCAPSFilterChange());
+        topicCombo.setOnAction(event -> applySelectedCAPSTopic());
+        topicCombo.getEditor().textProperty().addListener((obs, oldValue, newValue) -> {
+            if (!populatingForm && selectedCapsEntry != null
+                    && !newValue.equals(topicOption(selectedCapsEntry))) {
+                selectedCapsEntry = null;
+            }
+        });
     }
-    
-    private void autoPopulateCAPS() {
-        if (!autoPopulateEnabled) {
+
+    private void handleCAPSFilterChange() {
+        if (!populatingForm) {
+            objectivesArea.clear();
+            assessmentArea.clear();
+        }
+        refreshCAPSTopics();
+    }
+
+    private void refreshCAPSTopics() {
+        if (!autoPopulateEnabled || populatingForm) {
             return;
         }
-        
+
         String grade = gradeCombo.getValue();
         String subject = subjectCombo.getValue();
         String term = termCombo.getValue();
-        
+
+        selectedCapsEntry = null;
+        capsTopicOptions.clear();
+        topicCombo.getItems().clear();
+        topicCombo.setValue(null);
+        topicCombo.getEditor().clear();
+
         if (grade == null || subject == null || term == null) {
+            topicCombo.setPromptText("Choose grade, subject, and term first");
             return;
         }
-        
-        // Convert term string to integer
-        int termNumber = 1;
-        if (term.equals("Term 1")) termNumber = 1;
-        else if (term.equals("Term 2")) termNumber = 2;
-        else if (term.equals("Term 3")) termNumber = 3;
-        else if (term.equals("Term 4")) termNumber = 4;
-        
+
         try {
-            // Search for CAPS entry matching the criteria
-            List<CAPSEntry> capsEntries = capsEntryDAO.searchCAPSEntries(grade, subject, termNumber);
-            
-            if (!capsEntries.isEmpty()) {
-                // Use the first matching CAPS entry
-                CAPSEntry entry = capsEntries.get(0);
-                
-                // Auto-populate objectives and assessment
-                if (entry.getOutcomes() != null && !entry.getOutcomes().isEmpty()) {
-                    objectivesArea.setText(entry.getOutcomes());
-                }
-                
-                if (entry.getAssessmentStandards() != null && !entry.getAssessmentStandards().isEmpty()) {
-                    assessmentArea.setText(entry.getAssessmentStandards());
-                }
-                
-                errorLogger.logInfo("LessonPlanFormController", "autoPopulateCAPS", 
-                    "Auto-populated CAPS data for " + grade + " " + subject + " " + term);
+            int termNumber = Integer.parseInt(term.substring("Term ".length()));
+            List<CAPSEntry> entries = capsEntryDAO.searchCAPSEntries(grade, subject.trim(), termNumber);
+            for (CAPSEntry entry : entries) {
+                String option = topicOption(entry);
+                capsTopicOptions.put(option, entry);
+                topicCombo.getItems().add(option);
             }
+            topicCombo.setPromptText(entries.isEmpty()
+                ? "No CAPS topics for this selection; enter a topic"
+                : "Select a CAPS topic");
+        } catch (NumberFormatException e) {
+            errorLogger.logError("LessonPlanFormController", "refreshCAPSTopics", "Invalid term selection", e);
         } catch (Exception e) {
-            errorLogger.logError("LessonPlanFormController", "autoPopulateCAPS", 
-                "Failed to auto-populate CAPS data", e);
+            errorLogger.logError("LessonPlanFormController", "refreshCAPSTopics", "Failed to load CAPS topics", e);
         }
+    }
+
+    private String topicOption(CAPSEntry entry) {
+        return entry.getTopic() + " [" + entry.getCapsCode() + "]";
+    }
+
+    private void applySelectedCAPSTopic() {
+        if (populatingForm) {
+            return;
+        }
+        CAPSEntry entry = capsTopicOptions.get(topicCombo.getValue());
+        if (entry == null) {
+            selectedCapsEntry = null;
+            return;
+        }
+
+        selectedCapsEntry = entry;
+        populatingForm = true;
+        topicCombo.getEditor().setText(topicOption(entry));
+        if (entry.getOutcomes() != null) {
+            objectivesArea.setText(entry.getOutcomes());
+        }
+        if (entry.getAssessmentStandards() != null) {
+            assessmentArea.setText(entry.getAssessmentStandards());
+        }
+        populatingForm = false;
+        errorLogger.logInfo("LessonPlanFormController", "applySelectedCAPSTopic",
+            "Applied CAPS entry " + entry.getCapsCode());
+    }
+
+    private String getTopicText() {
+        String text = topicCombo.isEditable()
+            ? topicCombo.getEditor().getText()
+            : topicCombo.getValue();
+        return text == null ? "" : text.trim();
     }
 
     public void setAutoPopulateEnabled(boolean enabled) {
@@ -247,7 +319,8 @@ public class LessonPlanFormController {
         termCombo.setOnAction(e -> unsavedChangesTracker.markUnsavedChanges());
         durationField.textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
         lessonDatePicker.setOnAction(e -> unsavedChangesTracker.markUnsavedChanges());
-        topicField.textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
+        topicCombo.valueProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
+        topicCombo.getEditor().textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
         objectivesArea.textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
         teachingActivitiesArea.textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());
         assessmentArea.textProperty().addListener((obs, old, newVal) -> unsavedChangesTracker.markUnsavedChanges());

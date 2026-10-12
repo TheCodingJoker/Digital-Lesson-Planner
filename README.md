@@ -30,6 +30,7 @@ The Digital Lesson Planner (DLP) is a desktop application designed to help South
 
 ### For Teachers
 - Create lesson plans with automatic CAPS curriculum data population
+- Select grade-, subject-, and term-specific CAPS topics; save the selected CAPS code and curriculum snapshot with each lesson
 - Track lesson completion status (Completed, Incomplete, Extended)
 - Smart scheduling with automatic rescheduling (Push-Back Protocol)
 - Export lesson plans to PDF and Word formats

@@ -52,7 +52,7 @@
         </VBox>
         <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="2">
             <Label text="Topic" styleClass="field-label"/>
-            <TextField fx:id="topicField" promptText="e.g., Linear Equations" styleClass="text-input"/>
+            <ComboBox fx:id="topicCombo" editable="true" promptText="Choose a CAPS topic or enter one" maxWidth="Infinity" styleClass="text-input"/>
         </VBox>
     </GridPane>
 

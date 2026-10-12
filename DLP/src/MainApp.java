@@ -88,6 +88,7 @@ public class MainApp extends Application {
                 addColumnIfMissing(stmt, "LessonPlan", "durationMinutes", "INTEGER DEFAULT 60");
                 addColumnIfMissing(stmt, "LessonPlan", "teachingActivities", "TEXT");
                 addColumnIfMissing(stmt, "LessonPlan", "snapshotId", "TEXT");
+                addColumnIfMissing(stmt, "LessonPlan", "capsCode", "TEXT");
                 addColumnIfMissing(stmt, "LessonPlan", "reschedulingNote", "TEXT");
                 addColumnIfMissing(stmt, "User", "passwordMigrated", "INTEGER DEFAULT 0");
 

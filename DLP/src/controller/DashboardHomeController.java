@@ -241,7 +241,11 @@ public class DashboardHomeController {
         Label titleLabel = new Label(title);
         titleLabel.getStyleClass().add("lesson-row-title");
 
-        Label subtitleLabel = new Label(subject + " \u2022 " + grade);
+        String subtitle = subject + " \u2022 " + grade;
+        if (lessonPlan != null && lessonPlan.getCapsCode() != null && !lessonPlan.getCapsCode().isBlank()) {
+            subtitle += " \u2022 CAPS: " + lessonPlan.getCapsCode();
+        }
+        Label subtitleLabel = new Label(subtitle);
         subtitleLabel.getStyleClass().add("lesson-row-subtitle");
 
         Label dateLabel = new Label(date);

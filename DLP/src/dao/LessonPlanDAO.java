@@ -17,22 +17,26 @@ public class LessonPlanDAO {
     private ErrorLogger errorLogger = ErrorLogger.getInstance();
 
     public boolean createLessonPlan(LessonPlan plan, CAPSEntry capsEntry) {
-        // Create CAPS snapshot if CAPS entry is provided
+        plan.setSelectedCapsEntry(capsEntry);
+        plan.setCapsEntrySelectionChanged(true);
         if (capsEntry != null) {
             String snapshotId = UUID.randomUUID().toString();
-            plan.setSnapshotId(snapshotId);
-            
-            // Create the snapshot
-            if (!capsSnapshotDAO.createSnapshot(capsEntry)) {
-                System.err.println("Warning: Failed to create CAPS snapshot for lesson plan");
+            if (!capsSnapshotDAO.createSnapshot(capsEntry, snapshotId)) {
+                System.err.println("Error: Could not save CAPS snapshot for lesson plan");
+                return false;
             }
+            plan.setSnapshotId(snapshotId);
+            plan.setCapsCode(capsEntry.getCapsCode());
+        } else {
+            plan.setSnapshotId(null);
+            plan.setCapsCode(null);
         }
         
         String sql = "INSERT INTO LessonPlan " +
             "(lessonPlanId, teacherId, title, subject, gradeLevel, curriculumReference, " +
             "topic, durationMinutes, objectives, teachingActivities, assessmentMethod, resources, " +
-            "lessonDate, status, snapshotId) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "lessonDate, status, snapshotId, capsCode) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -52,6 +56,7 @@ public class LessonPlanDAO {
             pstmt.setString(13, plan.getLessonDate());
             pstmt.setString(14, plan.getStatus());
             pstmt.setString(15, plan.getSnapshotId());
+            pstmt.setString(16, plan.getCapsCode());
 
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -63,14 +68,31 @@ public class LessonPlanDAO {
     }
 
     public boolean createLessonPlan(LessonPlan plan) {
-        return createLessonPlan(plan, null);
+        return createLessonPlan(plan, plan.getSelectedCapsEntry());
     }
 
     public boolean updateLessonPlan(LessonPlan plan) {
+        CAPSEntry capsEntry = plan.getSelectedCapsEntry();
+        if (capsEntry != null) {
+            if (!capsEntry.getCapsCode().equals(plan.getCapsCode()) || plan.getSnapshotId() == null) {
+                String snapshotId = UUID.randomUUID().toString();
+                if (!capsSnapshotDAO.createSnapshot(capsEntry, snapshotId)) {
+                    System.err.println("Error: Could not save CAPS snapshot for lesson plan");
+                    return false;
+                }
+                plan.setSnapshotId(snapshotId);
+                plan.setCapsCode(capsEntry.getCapsCode());
+            }
+        } else if (plan.isCapsEntrySelectionChanged()) {
+            plan.setSnapshotId(null);
+            plan.setCapsCode(null);
+        }
+
         String sql = "UPDATE LessonPlan SET title = ?, subject = ?, gradeLevel = ?, " +
             "curriculumReference = ?, topic = ?, durationMinutes = ?, objectives = ?, " +
             "teachingActivities = ?, assessmentMethod = ?, resources = ?, lessonDate = ?, " +
-            "status = ?, reschedulingNote = ?, updatedAt = datetime('now','localtime') WHERE lessonPlanId = ?";
+            "status = ?, reschedulingNote = ?, snapshotId = ?, capsCode = ?, " +
+            "updatedAt = datetime('now','localtime') WHERE lessonPlanId = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -88,7 +110,9 @@ public class LessonPlanDAO {
             pstmt.setString(11, plan.getLessonDate());
             pstmt.setString(12, plan.getStatus());
             pstmt.setString(13, plan.getReschedulingNote());
-            pstmt.setString(14, plan.getLessonPlanId());
+            pstmt.setString(14, plan.getSnapshotId());
+            pstmt.setString(15, plan.getCapsCode());
+            pstmt.setString(16, plan.getLessonPlanId());
 
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -388,6 +412,12 @@ public class LessonPlanDAO {
         } catch (SQLException e) {
             // Column might not exist in older database versions
             plan.setSnapshotId(null);
+        }
+
+        try {
+            plan.setCapsCode(rs.getString("capsCode"));
+        } catch (SQLException e) {
+            plan.setCapsCode(null);
         }
 
         // Extract reschedulingNote if available

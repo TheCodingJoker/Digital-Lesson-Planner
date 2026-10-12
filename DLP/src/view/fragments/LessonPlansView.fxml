@@ -55,6 +55,7 @@
                 <TableColumn fx:id="subjectColumn" text="Subject" prefWidth="150"/>
                 <TableColumn fx:id="gradeColumn" text="Grade" prefWidth="80"/>
                 <TableColumn fx:id="termColumn" text="Term" prefWidth="80"/>
+                <TableColumn fx:id="capsCodeColumn" text="CAPS Code" prefWidth="180"/>
                 <TableColumn fx:id="dateColumn" text="Lesson Date" prefWidth="110"/>
                 <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
                 <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="340"/>

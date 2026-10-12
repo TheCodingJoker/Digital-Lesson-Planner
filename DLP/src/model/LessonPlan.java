@@ -30,6 +30,9 @@ public class LessonPlan implements Serializable {
     private String createdAt;
     private String updatedAt;
     private String snapshotId; // Foreign key to CAPSSnapshot
+    private String capsCode;
+    private transient CAPSEntry selectedCapsEntry;
+    private transient boolean capsEntrySelectionChanged;
     private String reschedulingNote; // Note explaining why lesson was rescheduled
 
     public LessonPlan() {}
@@ -84,6 +87,17 @@ public class LessonPlan implements Serializable {
 
     public String getSnapshotId() { return snapshotId; }
     public void setSnapshotId(String snapshotId) { this.snapshotId = snapshotId; }
+
+    public String getCapsCode() { return capsCode; }
+    public void setCapsCode(String capsCode) { this.capsCode = capsCode; }
+
+    public CAPSEntry getSelectedCapsEntry() { return selectedCapsEntry; }
+    public void setSelectedCapsEntry(CAPSEntry selectedCapsEntry) { this.selectedCapsEntry = selectedCapsEntry; }
+
+    public boolean isCapsEntrySelectionChanged() { return capsEntrySelectionChanged; }
+    public void setCapsEntrySelectionChanged(boolean capsEntrySelectionChanged) {
+        this.capsEntrySelectionChanged = capsEntrySelectionChanged;
+    }
 
     public String getReschedulingNote() { return reschedulingNote; }
     public void setReschedulingNote(String reschedulingNote) { this.reschedulingNote = reschedulingNote; }
