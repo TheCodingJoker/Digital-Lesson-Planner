@@ -63,7 +63,7 @@ public class SchedulingEngine {
             List<SchoolEvent> schoolEvents = getSchoolEvents(academicYear);
             
             // Calculate available teaching days
-            List<LocalDate> availableDays = calculateAvailableTeachingDays(startDate, schoolEvents);
+            List<LocalDate> availableDays = calculateAvailableTeachingDays(startDate, schoolEvents, academicYear);
             
             if (availableDays.size() < unscheduledLessons.size()) {
                 errorLogger.logWarning("SchedulingEngine", "distributeLessons", 
@@ -311,13 +311,14 @@ public class SchedulingEngine {
     /**
      * Calculate available teaching days for an academic year
      */
-    private List<LocalDate> calculateAvailableTeachingDays(LocalDate startDate, List<SchoolEvent> schoolEvents) {
+    private List<LocalDate> calculateAvailableTeachingDays(
+            LocalDate startDate, List<SchoolEvent> schoolEvents, int academicYear) {
         List<LocalDate> availableDays = new ArrayList<>();
         LocalDate currentDate = startDate;
         int daysChecked = 0;
 
         // Get total teaching days from school calendar
-        SchoolCalendar calendar = schoolCalendarDAO.getCurrentOrDefaultCalendar();
+        SchoolCalendar calendar = schoolCalendarDAO.getSchoolCalendarByYear(academicYear);
         int totalTeachingDays = calendar != null ? calendar.getTotalTeachingDays() : 180;
 
         while (availableDays.size() < totalTeachingDays && daysChecked < 365) {

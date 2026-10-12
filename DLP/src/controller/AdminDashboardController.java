@@ -302,6 +302,7 @@ public class AdminDashboardController {
     }
 
     private void loadSchoolCalendars() {
+        calendarDAO.getCurrentOrDefaultCalendar();
         List<SchoolCalendar> calendars = calendarDAO.getAllSchoolCalendars();
         calendarTable.getItems().setAll(calendars);
     }
@@ -455,7 +456,6 @@ public class AdminDashboardController {
         
         if (entry != null) {
             capsCodeField.setText(entry.getCapsCode());
-            capsCodeField.setDisable(true);
             subjectField.setText(entry.getSubject());
             gradeField.setText(entry.getGradeLevel());
             termCombo.setValue(entry.getTerm());
@@ -479,8 +479,14 @@ public class AdminDashboardController {
         
         Optional<ButtonType> result = dialog.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            CAPSEntry capsEntry = entry != null ? entry : new CAPSEntry();
-            capsEntry.setCapsCode(capsCodeField.getText());
+            String capsCode = capsCodeField.getText().trim();
+            if (capsCode.isEmpty()) {
+                showErrorMessage("CAPS code cannot be empty.");
+                return;
+            }
+
+            CAPSEntry capsEntry = new CAPSEntry();
+            capsEntry.setCapsCode(capsCode);
             capsEntry.setSubject(subjectField.getText());
             capsEntry.setGradeLevel(gradeField.getText());
             capsEntry.setTerm(termCombo.getValue());
@@ -492,17 +498,19 @@ public class AdminDashboardController {
             if (entry == null) {
                 success = capsDAO.createCAPSEntry(capsEntry);
                 if (success) {
-                    logAuditAction("Created CAPS entry", capsCodeField.getText());
+                    logAuditAction("Created CAPS entry", capsCode);
                 }
             } else {
-                success = capsDAO.updateCAPSEntry(capsEntry);
+                success = capsDAO.updateCAPSEntry(capsEntry, entry.getCapsCode());
                 if (success) {
-                    logAuditAction("Updated CAPS entry", capsCodeField.getText());
+                    logAuditAction("Updated CAPS entry", capsCode);
                 }
             }
             
             if (success) {
                 loadCAPSEntries();
+            } else {
+                showErrorMessage("Could not save the CAPS entry. The CAPS code may already be in use.");
             }
         }
     }
@@ -721,21 +729,27 @@ public class AdminDashboardController {
 
     private void showCalendarDialog(SchoolCalendar calendar) {
         Alert dialog = new Alert(Alert.AlertType.CONFIRMATION);
-        dialog.setTitle("Edit School Calendar");
-        dialog.setHeaderText("Edit academic year calendar settings");
+        dialog.setTitle(calendar == null ? "Add Academic Year" : "Edit School Calendar");
+        dialog.setHeaderText(calendar == null
+            ? "Set the system-wide teaching-day target for an academic year"
+            : "Edit system-wide teaching-day settings");
 
-        // Create form content
         TextField yearField = new TextField();
         yearField.setPromptText("Academic Year (e.g., 2026)");
-        yearField.setDisable(true); // Year cannot be changed
+        yearField.setText(String.valueOf(calendar == null
+            ? java.time.Year.now().getValue()
+            : calendar.getAcademicYear()));
+        yearField.setDisable(calendar != null);
         TextField totalDaysField = new TextField();
-        totalDaysField.setPromptText("Total Teaching Days (default: 180)");
+        totalDaysField.setPromptText("Teaching days for all users (default: 180)");
+        totalDaysField.setText(String.valueOf(calendar == null ? 180 : calendar.getTotalTeachingDays()));
         DatePicker startDatePicker = new DatePicker();
         DatePicker endDatePicker = new DatePicker();
+        int defaultYear = calendar == null ? java.time.Year.now().getValue() : calendar.getAcademicYear();
+        startDatePicker.setValue(java.time.LocalDate.of(defaultYear, 1, 15));
+        endDatePicker.setValue(java.time.LocalDate.of(defaultYear, 12, 1));
 
         if (calendar != null) {
-            yearField.setText(String.valueOf(calendar.getAcademicYear()));
-            totalDaysField.setText(String.valueOf(calendar.getTotalTeachingDays()));
             if (calendar.getStartDate() != null && !calendar.getStartDate().isEmpty()) {
                 startDatePicker.setValue(java.time.LocalDate.parse(calendar.getStartDate()));
             }
@@ -747,7 +761,7 @@ public class AdminDashboardController {
         VBox content = new VBox(12);
         content.getChildren().addAll(
             new Label("Academic Year:"), yearField,
-            new Label("Total Teaching Days:"), totalDaysField,
+            new Label("Teaching Days (system-wide):"), totalDaysField,
             new Label("Start Date:"), startDatePicker,
             new Label("End Date:"), endDatePicker
         );
@@ -756,24 +770,48 @@ public class AdminDashboardController {
 
         Optional<ButtonType> result = dialog.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            if (calendar != null) {
-                try {
-                    calendar.setTotalTeachingDays(Integer.parseInt(totalDaysField.getText()));
-                    calendar.setStartDate(startDatePicker.getValue() != null ? startDatePicker.getValue().toString() : "");
-                    calendar.setEndDate(endDatePicker.getValue() != null ? endDatePicker.getValue().toString() : "");
-
-                    boolean success = calendarDAO.updateSchoolCalendar(calendar);
-                    if (success) {
-                        logAuditAction("Updated school calendar", "Year " + calendar.getAcademicYear());
-                        loadSchoolCalendars();
-                        showSuccessMessage("Calendar updated successfully");
-                    } else {
-                        showErrorMessage("Failed to update calendar");
-                    }
-                } catch (NumberFormatException e) {
-                    showErrorMessage("Invalid number format for total teaching days");
+            try {
+                int academicYear = Integer.parseInt(yearField.getText().trim());
+                int totalTeachingDays = Integer.parseInt(totalDaysField.getText().trim());
+                if (academicYear < 1 || academicYear > 9999) {
+                    showErrorMessage("Enter a valid academic year.");
+                    return;
                 }
+                if (totalTeachingDays < 1 || totalTeachingDays > 366) {
+                    showErrorMessage("Teaching days must be between 1 and 366.");
+                    return;
+                }
+                if (startDatePicker.getValue() == null || endDatePicker.getValue() == null
+                        || startDatePicker.getValue().isAfter(endDatePicker.getValue())) {
+                    showErrorMessage("Choose valid start and end dates; the end date must not be before the start date.");
+                    return;
+                }
+
+                SchoolCalendar updatedCalendar = calendar == null ? new SchoolCalendar() : calendar;
+                updatedCalendar.setAcademicYear(academicYear);
+                updatedCalendar.setTotalTeachingDays(totalTeachingDays);
+                updatedCalendar.setStartDate(startDatePicker.getValue().toString());
+                updatedCalendar.setEndDate(endDatePicker.getValue().toString());
+
+                boolean success = calendar == null
+                    ? calendarDAO.createSchoolCalendar(updatedCalendar)
+                    : calendarDAO.updateSchoolCalendar(updatedCalendar);
+                if (success) {
+                    String action = calendar == null ? "Created school calendar" : "Updated school calendar";
+                    logAuditAction(action, "Year " + academicYear + ": " + totalTeachingDays + " teaching days");
+                    loadSchoolCalendars();
+                    showSuccessMessage("System-wide teaching days saved for " + academicYear + ".");
+                } else {
+                    showErrorMessage("Could not save the academic year. It may already exist; edit its row instead.");
+                }
+            } catch (NumberFormatException e) {
+                showErrorMessage("Academic year and teaching days must be whole numbers.");
             }
         }
+    }
+
+    @FXML
+    private void handleAddSchoolCalendar() {
+        showCalendarDialog(null);
     }
 }

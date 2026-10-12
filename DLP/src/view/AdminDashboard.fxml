@@ -116,7 +116,11 @@
                         </columns>
                     </TableView>
 
-                    <Label text="Academic Year Settings" styleClass="section-label"/>
+                    <HBox alignment="CENTER_LEFT" spacing="12">
+                        <Label text="System-wide Teaching Days by Academic Year" styleClass="section-label"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="+ Add Academic Year" onAction="#handleAddSchoolCalendar" styleClass="primary-button"/>
+                    </HBox>
                     <TableView fx:id="calendarTable" styleClass="data-table" minHeight="100" prefHeight="180" VBox.vgrow="ALWAYS">
                         <columns>
                             <TableColumn fx:id="calendarYearColumn" text="Academic Year" prefWidth="130"/>

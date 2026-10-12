@@ -29,19 +29,20 @@ public class CAPSEntryDAO {
         }
     }
 
-    public boolean updateCAPSEntry(CAPSEntry entry) {
-        String sql = "UPDATE CAPSEntry SET subject = ?, gradeLevel = ?, term = ?, topic = ?, outcomes = ?, assessmentStandards = ? WHERE capsCode = ?";
+    public boolean updateCAPSEntry(CAPSEntry entry, String originalCapsCode) {
+        String sql = "UPDATE CAPSEntry SET capsCode = ?, subject = ?, gradeLevel = ?, term = ?, topic = ?, outcomes = ?, assessmentStandards = ? WHERE capsCode = ?";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setString(1, entry.getSubject());
-            pstmt.setString(2, entry.getGradeLevel());
-            pstmt.setInt(3, entry.getTerm());
-            pstmt.setString(4, entry.getTopic());
-            pstmt.setString(5, entry.getOutcomes());
-            pstmt.setString(6, entry.getAssessmentStandards());
-            pstmt.setString(7, entry.getCapsCode());
+            pstmt.setString(1, entry.getCapsCode());
+            pstmt.setString(2, entry.getSubject());
+            pstmt.setString(3, entry.getGradeLevel());
+            pstmt.setInt(4, entry.getTerm());
+            pstmt.setString(5, entry.getTopic());
+            pstmt.setString(6, entry.getOutcomes());
+            pstmt.setString(7, entry.getAssessmentStandards());
+            pstmt.setString(8, originalCapsCode);
             
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {

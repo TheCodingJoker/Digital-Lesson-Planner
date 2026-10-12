@@ -46,7 +46,7 @@ The Digital Lesson Planner (DLP) is a desktop application designed to help South
 ### For Administrators
 - Manage user accounts (Teachers, Principals, Administrators)
 - Edit CAPS curriculum database (Strands, Topics, Codes, Outcomes)
-- Manage school calendar events (Full Day, Half Day)
+- Set system-wide teaching-day targets by academic year and manage school calendar events (Full Day, Half Day)
 - View tamper-proof audit log of all administrative actions
 - Manage feedback and issue reports
 
