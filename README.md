@@ -53,6 +53,14 @@ The Digital Lesson Planner (DLP) is a desktop application designed to help South
 
 ## Instructions
 
+### Quick Install (Windows)
+
+Download and run [DigitalLessonPlanner-Setup.exe](./DLP/DigitalLessonPlanner-Setup.exe). The installer includes the Java runtime and JavaFX dependencies, so Java and NetBeans do not need to be installed separately. It installs for the current Windows user and adds Start menu and optional desktop shortcuts.
+
+To rebuild the installer from source, install JDK 23 or newer, a JavaFX SDK, Apache Ant, and Inno Setup 6, then run `powershell -ExecutionPolicy Bypass -File .\DLP\installer\build-installer.ps1` from the repository root. The script copies the finished installer to the project and your Downloads folder.
+
+Application data is stored under `%LOCALAPPDATA%\DLP`. The encrypted database is protected for the Windows account that created it; do not copy the database file to a different Windows user or computer.
+
 ### Prerequisites
 - Windows (database encryption uses Windows DPAPI)
 - Java Development Kit (JDK) 23 or higher
