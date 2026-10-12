@@ -76,7 +76,7 @@ public class SchoolEventDAO {
 
             // Notify scheduling engine about event deletion
             if (success) {
-                SchedulingEngine.getInstance().handleEventDeletion(eventId);
+                SchedulingEngine.getInstance().handleEventDeletion(event);
             }
 
             return success;

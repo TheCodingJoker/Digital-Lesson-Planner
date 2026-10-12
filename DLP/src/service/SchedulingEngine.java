@@ -185,10 +185,10 @@ public class SchedulingEngine {
                             lesson.setLessonDate(nextAvailableDay.format(DateTimeFormatter.ISO_LOCAL_DATE));
                             lesson.setStatus(LessonPlan.STATUS_RESCHEDULED);
 
-                            // Add rescheduling note
-                            String rescheduleNote = "Rescheduled due to half-day event on " +
-                                eventDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
-                            lesson.setReschedulingNote(rescheduleNote);
+                            appendReschedulingNote(lesson,
+                                "Rescheduled due to half-day event on "
+                                    + eventDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                                    + " (eventId:" + halfDayEvent.getEventId() + ").");
 
                             lessonPlanDAO.updateLessonPlan(lesson);
 
@@ -545,28 +545,32 @@ public class SchedulingEngine {
     /**
      * Handle event deletion - check for affected lessons and notify teachers
      */
-    public void handleEventDeletion(String eventId) {
+    public int countLessonsRescheduledDueToEvent(SchoolEvent event) {
+        if (event == null) {
+            return 0;
+        }
+        return findLessonsRescheduledDueToEvent(event).size();
+    }
+
+    public void handleEventDeletion(SchoolEvent deletedEvent) {
         try {
-            SchoolEvent deletedEvent = schoolEventDAO.getSchoolEventById(eventId);
             if (deletedEvent == null) {
                 return;
             }
 
-            // Check for lessons that were rescheduled due to this event
-            String eventDate = deletedEvent.getEventDate();
-            List<LessonPlan> affectedLessons = findLessonsRescheduledDueToEvent(eventDate);
+            List<LessonPlan> affectedLessons = findLessonsRescheduledDueToEvent(deletedEvent);
 
             if (!affectedLessons.isEmpty()) {
                 errorLogger.logInfo("SchedulingEngine", "handleEventDeletion",
-                    "Event deletion affected " + affectedLessons.size() + " lessons");
+                    "Event deletion left " + affectedLessons.size()
+                        + " displaced lessons in place");
 
-                // Notify each teacher whose lessons were affected
                 notifyTeachersAboutEventDeletion(deletedEvent, affectedLessons);
             }
 
         } catch (Exception e) {
             errorLogger.logError("SchedulingEngine", "handleEventDeletion",
-                "Failed to handle event deletion: " + eventId, e);
+                "Failed to handle event deletion: " + deletedEvent.getEventId(), e);
         }
     }
 
@@ -591,12 +595,12 @@ public class SchedulingEngine {
             String notificationId = UUID.randomUUID().toString();
             String title = "School Event Deleted";
             String message = String.format(
-                "The event '%s' on %s has been deleted. %d lesson(s) that were previously " +
-                "rescheduled due to this event may need to be moved back to %s.",
+                "The event '%s' on %s has been deleted. %d lesson(s) were displaced by this " +
+                "event and have not been moved back. Review your plans and move any lessons " +
+                "manually if needed.",
                 deletedEvent.getEventName(),
                 deletedEvent.getEventDate(),
-                teacherLessons.size(),
-                deletedEvent.getEventDate()
+                teacherLessons.size()
             );
 
             Notification notification = new Notification(
@@ -617,14 +621,17 @@ public class SchedulingEngine {
     /**
      * Find lessons that were rescheduled due to a specific event
      */
-    private List<LessonPlan> findLessonsRescheduledDueToEvent(String eventDate) {
+    private List<LessonPlan> findLessonsRescheduledDueToEvent(SchoolEvent event) {
         List<LessonPlan> affectedLessons = new ArrayList<>();
         List<LessonPlan> allLessons = lessonPlanDAO.getAllLessonPlans();
+        String eventDate = event.getEventDate();
+        String eventMarker = "(eventId:" + event.getEventId() + ")";
+        String legacyNote = "Rescheduled due to half-day event on " + eventDate;
 
-        // Search for lessons with rescheduling notes containing the event date
         for (LessonPlan lesson : allLessons) {
             String note = lesson.getReschedulingNote();
-            if (note != null && note.contains(eventDate)) {
+            if (note != null
+                    && (note.contains(eventMarker) || note.contains(legacyNote))) {
                 affectedLessons.add(lesson);
             }
         }

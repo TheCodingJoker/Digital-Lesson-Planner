@@ -2,6 +2,7 @@ package controller;
 
 import dao.*;
 import model.*;
+import service.SchedulingEngine;
 import util.SessionManager;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -533,10 +534,15 @@ public class AdminDashboardController {
 
     @FXML
     private void handleDeleteEvent(SchoolEvent event) {
+        int displacedLessonCount = SchedulingEngine.getInstance()
+            .countLessonsRescheduledDueToEvent(event);
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Delete School Event");
         confirm.setHeaderText("Delete event: " + event.getEventName() + "?");
-        confirm.setContentText("This action cannot be undone.");
+        confirm.setContentText("This action cannot be undone.\n\n"
+            + displacedLessonCount + " lesson(s) were displaced by this event. "
+            + "Deleting it will not move those lessons back; teachers will keep control "
+            + "of their plans.");
         
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
