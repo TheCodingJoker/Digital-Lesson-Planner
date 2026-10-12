@@ -269,8 +269,11 @@ public class DashboardHomeController {
         if (!status.equalsIgnoreCase("completed") && lessonPlan != null) {
             Button completeButton = createActionButton("✓", "Mark as complete", () -> markAsComplete(lessonPlan));
             Button extendButton = createActionButton("⏱", "Extend lesson", () -> extendLesson(lessonPlan));
+            Button incompleteButton = createActionButton(
+                "!", "Mark as incomplete", () -> markAsIncomplete(lessonPlan));
             Button deleteButton = createActionButton("🗑", "Delete lesson", () -> deleteLesson(lessonPlan));
-            actionButtons.getChildren().addAll(completeButton, extendButton, deleteButton);
+            actionButtons.getChildren().addAll(
+                completeButton, extendButton, incompleteButton, deleteButton);
         }
 
         // Save to computer button for all lessons
@@ -308,10 +311,9 @@ public class DashboardHomeController {
     private void markAsComplete(LessonPlan lessonPlan) {
         if (lessonPlan == null) return;
         
-        boolean success = lessonPlanDAO.updateStatus(lessonPlan.getLessonPlanId(), LessonPlan.STATUS_COMPLETED);
+        boolean success = schedulingEngine.handleLessonStatusChange(
+            lessonPlan.getLessonPlanId(), LessonPlan.STATUS_COMPLETED);
         if (success) {
-            // Trigger scheduling engine for status change
-            schedulingEngine.handleLessonStatusChange(lessonPlan.getLessonPlanId(), LessonPlan.STATUS_COMPLETED);
             showSuccessMessage("Lesson marked as complete!");
             loadDashboardData();
         } else {
@@ -322,14 +324,27 @@ public class DashboardHomeController {
     private void extendLesson(LessonPlan lessonPlan) {
         if (lessonPlan == null) return;
         
-        boolean success = lessonPlanDAO.updateStatus(lessonPlan.getLessonPlanId(), LessonPlan.STATUS_EXTENDED);
+        boolean success = schedulingEngine.handleLessonStatusChange(
+            lessonPlan.getLessonPlanId(), LessonPlan.STATUS_EXTENDED);
         if (success) {
-            // Trigger scheduling engine for status change (applies Push-Back Protocol)
-            schedulingEngine.handleLessonStatusChange(lessonPlan.getLessonPlanId(), LessonPlan.STATUS_EXTENDED);
             showSuccessMessage("Lesson extended! Subsequent lessons will be rescheduled.");
             loadDashboardData();
         } else {
             showErrorMessage("Failed to extend lesson.");
+        }
+    }
+
+    private void markAsIncomplete(LessonPlan lessonPlan) {
+        if (lessonPlan == null) return;
+
+        boolean success = schedulingEngine.handleLessonStatusChange(
+            lessonPlan.getLessonPlanId(), LessonPlan.STATUS_INCOMPLETE);
+        if (success) {
+            showSuccessMessage("Lesson marked incomplete. Subsequent lessons were rescheduled.");
+            loadDashboardData();
+        } else {
+            showErrorMessage("The lesson could not be marked incomplete or the remaining lessons "
+                + "could not be fully rescheduled.");
         }
     }
 

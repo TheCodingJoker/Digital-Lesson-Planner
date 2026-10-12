@@ -58,7 +58,8 @@
                 <TableColumn fx:id="capsCodeColumn" text="CAPS Code" prefWidth="180"/>
                 <TableColumn fx:id="dateColumn" text="Lesson Date" prefWidth="110"/>
                 <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
-                <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="340"/>
+                <TableColumn fx:id="reschedulingNoteColumn" text="Rescheduling Note" prefWidth="260"/>
+                <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="440"/>
             </columns>
         </TableView>
     </VBox>
