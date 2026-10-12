@@ -30,12 +30,14 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -70,6 +72,10 @@ import java.nio.file.Files;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 
 public class PrincipalDashboardController {
 
@@ -154,6 +160,11 @@ public class PrincipalDashboardController {
     private List<TeacherProgress> currentTeacherProgress = new ArrayList<>();
     private Node dashboardView;
     private boolean dashboardDataLoaded;
+    private YearMonth principalCalendarMonth = YearMonth.now();
+    private LocalDate principalCalendarSelectedDate = LocalDate.now();
+    private List<SchoolEvent> principalCalendarEvents = List.of();
+    private static final DateTimeFormatter CALENDAR_MONTH_FORMAT =
+        DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault());
 
     // =========================================================
     // INITIALIZE
@@ -603,28 +614,145 @@ public class PrincipalDashboardController {
             if (calendar == null) {
                 throw new IllegalStateException("No school calendar is configured.");
             }
-            List<SchoolEvent> events = schoolEventDAO.getAllSchoolEvents();
-            TableView<SchoolEvent> table = new TableView<>();
-            table.getStyleClass().add("data-table");
-            table.setPlaceholder(new Label("No school events are scheduled for this academic year."));
-            table.getColumns().add(textColumn("Event", "eventName"));
-            table.getColumns().add(textColumn("Date", "eventDate"));
-            table.getColumns().add(textColumn("Type", "eventType"));
-            table.getColumns().add(textColumn("Description", "description"));
-            for (SchoolEvent event : events) {
-                if (event.getAcademicYear() == calendar.getAcademicYear()) table.getItems().add(event);
-            }
-
+            principalCalendarEvents = schoolEventDAO.getAllSchoolEvents();
             VBox page = createPage("School Calendar", "Academic year " + calendar.getAcademicYear()
                 + "  |  " + calendar.getTotalTeachingDays() + " teaching days  |  "
                 + calendar.getStartDate() + " to " + calendar.getEndDate());
-            page.getChildren().add(table);
-            VBox.setVgrow(table, Priority.ALWAYS);
+            HBox monthNavigation = new HBox(12);
+            monthNavigation.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            Button previousMonth = new Button("<");
+            previousMonth.getStyleClass().add("icon-button");
+            Label monthLabel = new Label();
+            monthLabel.getStyleClass().add("section-label");
+            Button nextMonth = new Button(">");
+            nextMonth.getStyleClass().add("icon-button");
+            Button today = new Button("Today");
+            today.getStyleClass().add("secondary-button");
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            monthNavigation.getChildren().addAll(previousMonth, monthLabel, nextMonth, spacer, today);
+
+            GridPane calendarGrid = new GridPane();
+            calendarGrid.setHgap(4);
+            calendarGrid.setVgap(4);
+            calendarGrid.setMaxWidth(Double.MAX_VALUE);
+            for (int column = 0; column < 7; column++) {
+                ColumnConstraints constraints = new ColumnConstraints();
+                constraints.setPercentWidth(100.0 / 7);
+                constraints.setHgrow(Priority.ALWAYS);
+                calendarGrid.getColumnConstraints().add(constraints);
+            }
+
+            VBox selectedDateEvents = new VBox(8);
+            Label selectedDateHeading = new Label();
+            selectedDateHeading.getStyleClass().add("section-label");
+            selectedDateEvents.getChildren().add(selectedDateHeading);
+            VBox calendarCard = new VBox(8, monthNavigation, calendarGrid);
+            calendarCard.getStyleClass().add("content-card");
+            VBox eventCard = new VBox(8, selectedDateEvents);
+            eventCard.getStyleClass().add("content-card");
+            page.getChildren().addAll(calendarCard, eventCard);
+
+            Runnable[] refreshCalendar = new Runnable[1];
+            refreshCalendar[0] = () -> {
+                monthLabel.setText(principalCalendarMonth.format(CALENDAR_MONTH_FORMAT));
+                selectedDateHeading.setText("Events on " + principalCalendarSelectedDate);
+                calendarGrid.getChildren().clear();
+                String[] dayNames = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+                for (int column = 0; column < dayNames.length; column++) {
+                    Label dayName = new Label(dayNames[column]);
+                    dayName.setStyle("-fx-font-weight: bold; -fx-text-fill: #666;");
+                    calendarGrid.add(dayName, column, 0);
+                }
+
+                int column = principalCalendarMonth.atDay(1).getDayOfWeek().getValue() % 7;
+                int row = 1;
+                for (int day = 1; day <= principalCalendarMonth.lengthOfMonth(); day++) {
+                    LocalDate date = principalCalendarMonth.atDay(day);
+                    VBox dayCell = new VBox(3);
+                    dayCell.setStyle("-fx-background-color: #f5f5f5; -fx-background-radius: 4; -fx-padding: 8;");
+                    dayCell.setMinHeight(90);
+                    if (date.equals(LocalDate.now())) {
+                        dayCell.setStyle("-fx-background-color: #e3f2fd; -fx-background-radius: 4; "
+                            + "-fx-padding: 8; -fx-border-color: #2196f3; -fx-border-width: 2;");
+                    }
+                    if (date.equals(principalCalendarSelectedDate)) {
+                        dayCell.setStyle("-fx-background-color: #bbdefb; -fx-background-radius: 4; "
+                            + "-fx-padding: 8; -fx-border-color: #1976d2; -fx-border-width: 2;");
+                    }
+                    Label dayNumber = new Label(String.valueOf(day));
+                    dayNumber.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+                    dayCell.getChildren().add(dayNumber);
+                    for (SchoolEvent event : eventsOnDate(date)) {
+                        Label eventName = new Label(event.getEventName());
+                        eventName.setStyle("-fx-font-size: 10px; -fx-text-fill: #334155;");
+                        eventName.setWrapText(true);
+                        dayCell.getChildren().add(eventName);
+                    }
+                    dayCell.setOnMouseClicked(e -> {
+                        principalCalendarSelectedDate = date;
+                        refreshCalendar[0].run();
+                    });
+                    calendarGrid.add(dayCell, column, row);
+                    if (++column == 7) {
+                        column = 0;
+                        row++;
+                    }
+                }
+
+                selectedDateEvents.getChildren().removeIf(node -> node != selectedDateHeading);
+                List<SchoolEvent> dateEvents = eventsOnDate(principalCalendarSelectedDate);
+                if (dateEvents.isEmpty()) {
+                    selectedDateEvents.getChildren().add(new Label("No school events scheduled for this date."));
+                } else {
+                    for (SchoolEvent event : dateEvents) {
+                        String details = event.getEventName() + " (" + displaySchoolEventType(event.getEventType()) + ")";
+                        if (event.getDescription() != null && !event.getDescription().isBlank()) {
+                            details += " - " + event.getDescription();
+                        }
+                        Label eventDetails = new Label(details);
+                        eventDetails.setWrapText(true);
+                        eventDetails.setStyle("-fx-padding: 8; -fx-background-color: #f3f4f6; -fx-background-radius: 4;");
+                        selectedDateEvents.getChildren().add(eventDetails);
+                    }
+                }
+            };
+            previousMonth.setOnAction(e -> {
+                principalCalendarMonth = principalCalendarMonth.minusMonths(1);
+                refreshCalendar[0].run();
+            });
+            nextMonth.setOnAction(e -> {
+                principalCalendarMonth = principalCalendarMonth.plusMonths(1);
+                refreshCalendar[0].run();
+            });
+            today.setOnAction(e -> {
+                principalCalendarMonth = YearMonth.now();
+                principalCalendarSelectedDate = LocalDate.now();
+                refreshCalendar[0].run();
+            });
+            refreshCalendar[0].run();
+            VBox.setVgrow(calendarCard, Priority.ALWAYS);
             showPage(page, navCalendarButton);
         } catch (Exception e) {
             e.printStackTrace();
             showError("Calendar Error", "Unable to load school calendar: " + e.getMessage());
         }
+    }
+
+    private List<SchoolEvent> eventsOnDate(LocalDate date) {
+        return principalCalendarEvents.stream()
+            .filter(event -> {
+                try {
+                    return date.equals(LocalDate.parse(event.getEventDate()));
+                } catch (DateTimeException e) {
+                    return false;
+                }
+            })
+            .toList();
+    }
+
+    private String displaySchoolEventType(String eventType) {
+        return "FULL_DAY".equals(eventType) ? "Full day" : "Half day";
     }
 
     @FXML
